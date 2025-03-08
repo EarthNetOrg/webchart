@@ -7,6 +7,7 @@
   export let y = 0;
   export let dataPoint: SpiderDataPoint | null = null;
   export let series: SpiderChartSeries | null = null;
+  export let tooltipClass: string = "spider-chart-tooltip";
 
   // Reference to the chart container
   let chartContainer: HTMLElement | null = null;
@@ -70,12 +71,12 @@
 </script>
 
 {#if visible && dataPoint && series}
-  <div class="tooltip" style:left="{adjustedX}px" style:top="{adjustedY}px">
+  <div
+    class="tooltip {tooltipClass}"
+    style:left="{adjustedX}px"
+    style:top="{adjustedY}px"
+  >
     <div class="tooltip-header">
-      <div
-        class="series-indicator"
-        style:background-color={series.color || "#2196F3"}
-      ></div>
       <span class="series-name">{dataPoint.axis}</span>
     </div>
 
@@ -88,19 +89,12 @@
         <div class="axis-rationale">{dataPoint.rationale}</div>
       {/if}
     </div>
-
-    {#if dataPoint.children && dataPoint.children.length > 0}
-      <div class="tooltip-footer">
-        <span class="drill-down-hint">Click to view details</span>
-      </div>
-    {/if}
   </div>
 {/if}
 
 <style>
   .tooltip {
     position: fixed; /* Changed from absolute to fixed */
-    background-color: white;
     border-radius: 4px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     padding: 8px;
@@ -110,12 +104,13 @@
     max-width: 250px;
     font-size: 12px;
     transform: translate(0, -50%); /* Adjusted to center vertically */
+    background-color: white; /* Default background color */
   }
 
   .tooltip-header {
     display: flex;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     padding-bottom: 4px;
     border-bottom: 1px solid #eee;
   }
@@ -141,9 +136,10 @@
   }
 
   .axis-value {
-    font-size: 14px;
+    margin-top: 4px;
+    font-size: 18px;
     font-weight: bold;
-    color: #333;
+    color: #333; /* Default text color */
   }
 
   .axis-description {
@@ -171,4 +167,12 @@
     display: inline-block;
     font-style: italic;
   }
+
+  /* Default tooltip class */
+  .spider-chart-tooltip {
+    background-color: white;
+    color: #333;
+  }
+
+  /* The tooltip class will override these defaults */
 </style>

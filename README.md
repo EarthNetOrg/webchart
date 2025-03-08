@@ -52,6 +52,77 @@ npm install svelte-spider-chart d3
 />
 ```
 
+## Custom Styling Example
+
+You can customize the appearance of the title, description, and rationale elements by providing custom CSS classes:
+
+```svelte
+<script>
+  import { SpiderChart } from 'svelte-spider-chart';
+  
+  const data = [
+    { axis: "Strength", value: 80 },
+    { axis: "Intelligence", value: 70 },
+    { axis: "Agility", value: 90 },
+    { axis: "Stamina", value: 60 },
+    { axis: "Speed", value: 85 },
+    { axis: "Accuracy", value: 75 }
+  ];
+</script>
+
+<style>
+  .custom-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff3e00;
+    text-align: center;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+  
+  .custom-description {
+    font-size: 16px;
+    color: #333;
+    text-align: center;
+    margin-bottom: 12px;
+    font-style: normal;
+    line-height: 1.5;
+  }
+  
+  .custom-rationale {
+    font-size: 14px;
+    color: #555;
+    text-align: center;
+    margin-top: 20px;
+    padding: 12px;
+    border-top: 2px dashed #ccc;
+    font-style: italic;
+  }
+  
+  .custom-tooltip {
+    background-color: #f8f9fa;
+    color: #ff3e00;
+  }
+</style>
+
+<SpiderChart 
+  {data} 
+  title="Character Stats" 
+  description="A visual representation of character attributes"
+  rationale="These stats are used to determine character abilities in gameplay"
+  titleClass="custom-title"
+  descriptionClass="custom-description"
+  rationaleClass="custom-rationale"
+  tooltipClass="custom-tooltip"
+/>
+```
+
+This example customizes:
+- The title with a larger, uppercase, colored font
+- The description with a normal font style and darker color
+- The rationale with a dashed border and italic style
+- The tooltip with a light gray background and the same accent color as the title
+
 ## Multiple Series Example
 
 ```svelte
@@ -208,6 +279,10 @@ The component can handle multiple levels of nesting, with values calculated recu
 | `width` | `string \| number` | `'100%'` | Width of the chart container |
 | `height` | `string \| number` | `'auto'` | Height of the chart container |
 | `class` | `string` | `''` | Additional CSS class for the chart container |
+| `titleClass` | `string` | `'spider-chart-title'` | CSS class for the title element |
+| `descriptionClass` | `string` | `'spider-chart-description'` | CSS class for the description element |
+| `rationaleClass` | `string` | `'spider-chart-rationale'` | CSS class for the rationale element |
+| `tooltipClass` | `string` | `'spider-chart-tooltip'` | CSS class for the tooltip element |
 
 ## Configuration Options
 
@@ -266,8 +341,29 @@ interface SpiderChartConfig {
     left: number;
   };
 }
+
+interface SpiderChartProps {
+  data: SpiderDataPoint[] | SpiderChartSeries[];
+  config?: SpiderChartConfig;
+  title?: string;
+  description?: string;
+  rationale?: string;
+  width?: string | number;
+  height?: string | number;
+  class?: string;
+  titleClass?: string;
+  descriptionClass?: string;
+  rationaleClass?: string;
+  tooltipClass?: string;
+}
 ```
 
 ## License
 
 MIT 
+
+This example customizes:
+- The title with a larger, uppercase, colored font
+- The description with a normal font style and darker color
+- The rationale with a dashed border and italic style
+- The tooltip with a light gray background and the same accent color as the title 

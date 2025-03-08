@@ -18,6 +18,7 @@ declare const Tooltip: $$__sveltets_2_IsomorphicComponent<{
     y?: number;
     dataPoint?: SpiderDataPoint | null;
     series?: SpiderChartSeries | null;
+    tooltipClass?: string;
 }, {
     [evt: string]: CustomEvent<any>;
 }, {}, {}, string>;

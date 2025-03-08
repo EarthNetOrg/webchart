@@ -4,16 +4,18 @@
   export let path: SpiderDataPoint[] = [];
   export let onNavigate: (index: number) => void;
   export let onReset: () => void;
+  export let title: string = "Home";
+  export let breadcrumbsClass: string = "breadcrumbs";
 </script>
 
 {#if path.length > 0}
-  <div class="breadcrumbs">
+  <div class={breadcrumbsClass}>
     <button
-      class="breadcrumb-item home"
+      class="breadcrumb-item"
       on:click={onReset}
       title="Return to main chart"
     >
-      Home
+      {title}
     </button>
 
     {#each path as item, index}
@@ -43,19 +45,11 @@
     border: none;
     padding: 4px 8px;
     cursor: pointer;
-    color: #666;
     border-radius: 4px;
     transition: background-color 0.2s;
   }
-
-  .breadcrumb-item:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: #333;
-  }
-
   .breadcrumb-item.active {
     font-weight: bold;
-    color: #333;
     cursor: default;
   }
 
@@ -63,12 +57,8 @@
     background-color: transparent;
   }
 
-  .breadcrumb-item.home {
-    color: #2196f3;
-  }
-
   .separator {
     margin: 0 4px;
-    color: #ccc;
+    opacity: 0.5;
   }
 </style>

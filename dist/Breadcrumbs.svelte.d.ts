@@ -16,6 +16,8 @@ declare const Breadcrumbs: $$__sveltets_2_IsomorphicComponent<{
     path?: SpiderDataPoint[];
     onNavigate: (index: number) => void;
     onReset: () => void;
+    title?: string;
+    breadcrumbsClass?: string;
 }, {
     [evt: string]: CustomEvent<any>;
 }, {}, {}, string>;

@@ -155,4 +155,9 @@ export interface SpiderChartProps {
      * Optional CSS class to apply to the rationale element (default: "spider-chart-rationale")
      */
     rationaleClass?: string;
+    /**
+     * Optional CSS class to apply to the tooltip element (default: "spider-chart-tooltip")
+     * This class can be used to customize the tooltip's appearance, including background and text colors.
+     */
+    tooltipClass?: string;
 }

@@ -29,6 +29,9 @@
   export let descriptionClass: string = "spider-chart-description";
   export let rationaleClass: string = "spider-chart-rationale";
 
+  // Tooltip customization props
+  export let tooltipClass: string = "spider-chart-tooltip";
+
   // Internal state
   let chartElement: HTMLDivElement;
   let containerWidth = 0;
@@ -665,19 +668,20 @@
 </script>
 
 <div class="spider-chart-container {className}" style:width style:height>
-  {#if description}
-    <div class={descriptionClass}>{description}</div>
-  {/if}
+  <Breadcrumbs
+    path={navigationPath}
+    onNavigate={handleNavigate}
+    onReset={handleReset}
+    title={title || "Home"}
+  />
 
   {#if title}
     <div class={titleClass}>{title}</div>
   {/if}
 
-  <Breadcrumbs
-    path={navigationPath}
-    onNavigate={handleNavigate}
-    onReset={handleReset}
-  />
+  {#if description}
+    <div class={descriptionClass}>{description}</div>
+  {/if}
 
   <div class="spider-chart" bind:this={chartElement}></div>
 
@@ -691,6 +695,7 @@
     y={tooltipY}
     dataPoint={tooltipDataPoint}
     series={tooltipSeries}
+    {tooltipClass}
   />
 </div>
 
@@ -727,5 +732,11 @@
     margin-top: 16px;
     padding: 8px;
     border-top: 1px solid #eee;
+  }
+
+  /* Default tooltip class that can be overridden by user */
+  :global(.spider-chart-tooltip) {
+    background-color: white;
+    color: #333;
   }
 </style>
