@@ -1,0 +1,59 @@
+ # Source files
+src/
+tests/
+test/
+
+# Configuration files
+.github/
+.vscode/
+.editorconfig
+.eslintrc
+.eslintignore
+.prettierrc
+.prettierignore
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+vitest.config.ts
+*.code-workspace
+
+# Git files
+.git/
+.gitignore
+
+# CI/CD
+.travis.yml
+.gitlab-ci.yml
+.github/
+.circleci/
+
+# Documentation
+docs/
+examples/
+demo/
+*.md
+!README.md
+!LICENSE.md
+!CHANGELOG.md
+
+# Development and testing
+coverage/
+.nyc_output/
+__tests__/
+__mocks__/
+*.spec.*
+*.test.*
+
+# Misc
+.DS_Store
+*.log
+.env*
+.npmrc
+.yarnrc
+.pnpmrc
+
+# Package files
+*.tgz
+
+# Svelte specific
+.svelte-kit/
