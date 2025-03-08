@@ -1,6 +1,6 @@
 {
   "name": "svelte-spider-chart",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Interactive Spider Chart component for Svelte 5",
   "type": "module",
   "main": "./dist/index.js",

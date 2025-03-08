@@ -18,6 +18,7 @@ declare const Breadcrumbs: $$__sveltets_2_IsomorphicComponent<{
     onReset: () => void;
     title?: string;
     breadcrumbsClass?: string;
+    breadcrumbItemClass?: string;
 }, {
     [evt: string]: CustomEvent<any>;
 }, {}, {}, string>;

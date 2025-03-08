@@ -6,6 +6,7 @@
   export let onReset: () => void;
   export let title: string = "Home";
   export let breadcrumbsClass: string = "breadcrumbs";
+  export let breadcrumbItemClass: string = "breadcrumb-item";
 </script>
 
 {#if path.length > 0}
@@ -21,7 +22,9 @@
     {#each path as item, index}
       <span class="separator">›</span>
       <button
-        class="breadcrumb-item {index === path.length - 1 ? 'active' : ''}"
+        class="{breadcrumbItemClass} {index === path.length - 1
+          ? 'active'
+          : ''}"
         on:click={() => onNavigate(index)}
         title={item.description || item.axis}
       >

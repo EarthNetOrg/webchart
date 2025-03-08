@@ -28,6 +28,8 @@
   export let titleClass: string = "spider-chart-title";
   export let descriptionClass: string = "spider-chart-description";
   export let rationaleClass: string = "spider-chart-rationale";
+  export let breadcrumbsClass: string = "";
+  export let breadcrumbItemClass: string = "breadcrumb-item";
 
   // Tooltip customization props
   export let tooltipClass: string = "spider-chart-tooltip";
@@ -673,10 +675,18 @@
     onNavigate={handleNavigate}
     onReset={handleReset}
     title={title || "Home"}
+    {breadcrumbsClass}
+    {breadcrumbItemClass}
   />
 
   {#if title}
-    <div class={titleClass}>{title}</div>
+    <div class={titleClass}>
+      {#if navigationPath.length > 0}
+        {navigationPath[navigationPath.length - 1]?.axis || title}
+      {:else}
+        {title}
+      {/if}
+    </div>
   {/if}
 
   {#if description}
