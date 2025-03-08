@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.9.12] - 2024-07-16
+
+### Fixed
+- Fixed issue where axis labels were only partially clickable when the chart first loads
+- Improved clickability of axis labels by making the entire label group capture mouse events
+- Increased the clickable area around labels for better user experience
+- Enhanced event handling to ensure consistent behavior between initial render and after navigation
+
 ## [0.1.9.11] - 2024-07-15
 
 ### Fixed

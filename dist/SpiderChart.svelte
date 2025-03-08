@@ -289,18 +289,23 @@
           const x = (radius + 10) * Math.cos(angleSlice * i - Math.PI / 2);
           const y = (radius + 10) * Math.sin(angleSlice * i - Math.PI / 2);
           return `translate(${x}, ${y})`;
-        });
+        })
+        // Make the entire group clickable
+        .style("pointer-events", "all")
+        .style("cursor", (d: string) =>
+          axesWithChildren.has(d) ? "pointer" : "default"
+        );
 
-      // Add background boxes
+      // Add background boxes - make them larger to increase clickable area
       labelGroups
         .append("rect")
         .attr("class", "axis-label-box")
-        .attr("x", (d: string) => -Math.max(d.length * 3.5, 15) - 4)
-        .attr("y", -10 - 4)
+        .attr("x", (d: string) => -Math.max(d.length * 3.5, 15) - 8)
+        .attr("y", -10 - 8)
         .attr("rx", 3)
         .attr("ry", 3)
-        .attr("width", (d: string) => Math.max(d.length * 7, 30) + 8)
-        .attr("height", 20 + 8)
+        .attr("width", (d: string) => Math.max(d.length * 7, 30) + 16)
+        .attr("height", 20 + 16)
         .attr("fill", (d: string) =>
           axesWithChildren.has(d) ? "#f8f9fa" : "#ffffff"
         )
@@ -329,14 +334,52 @@
         )
         .text((d: string) => d);
 
-      // Add click handlers and styling for axes with children
+      // Add click handlers directly to the label groups
+      labelGroups
+        .filter((d: string) => axesWithChildren.has(d))
+        .on("click", function (event: MouseEvent, d: string) {
+          console.log("Label click on axis:", d);
+          event.stopPropagation();
+
+          // Find the data point with this axis name
+          let dataPoint = null;
+          let foundDataPoint = false;
+
+          for (const series of currentSeries) {
+            dataPoint = series.data.find((p) => p.axis === d);
+
+            if (dataPoint) {
+              foundDataPoint = true;
+
+              if (dataPoint.children && dataPoint.children.length > 0) {
+                console.log("Children found:", dataPoint.children.length);
+
+                // Call custom onClick handler if it exists
+                if (typeof dataPoint.onClick === "function") {
+                  console.log("Calling custom onClick handler");
+                  const result = dataPoint.onClick();
+                  if (result === false) {
+                    return; // Skip navigation if handler returns false
+                  }
+                }
+
+                console.log("Proceeding with navigation to children");
+                navigateToChildren(dataPoint);
+                break;
+              }
+            }
+          }
+
+          if (!foundDataPoint) {
+            console.log("No data point found with axis:", d);
+          }
+        });
+
+      // Apply hover effects to all label groups
       labelGroups.each(function (this: any, d: string) {
         const element = this as unknown as SVGGElement;
         const group = d3.select(element);
         const hasChildren = axesWithChildren.has(d);
-
-        // Make all labels have pointer events
-        group.style("pointer-events", "all");
 
         // Find the data point and series for this axis
         let axisDataPoint: SpiderDataPoint | null = null;
@@ -438,155 +481,6 @@
               .attr("fill", "#666666");
           }
         });
-
-        if (hasChildren) {
-          // Set cursor style for the entire group
-          group.style("cursor", "pointer");
-
-          // Add click handler
-          group.on("click", (event: MouseEvent) => {
-            // Stop event propagation to prevent multiple handlers from firing
-            event.stopPropagation();
-
-            console.log("Click on axis:", d);
-
-            // Check if currentSeries is empty
-            if (!currentSeries || currentSeries.length === 0) {
-              console.error(
-                "Current series is empty when clicking on axis:",
-                d
-              );
-
-              // Special handling for Documentation axis
-              if (d === "Documentation" || d.includes("Documentation")) {
-                console.log("Special handling for Documentation axis");
-
-                // Try to find the Support item in the normalized data
-                const supportSeries = normalizedData.find((series) =>
-                  series.data.some((point) => point.axis === "Support")
-                );
-
-                if (supportSeries && supportSeries.data) {
-                  const supportPoint = supportSeries.data.find(
-                    (point) => point.axis === "Support"
-                  );
-
-                  if (supportPoint && supportPoint.children) {
-                    console.log(
-                      "Found Support point with children, navigating to it first"
-                    );
-
-                    // First navigate to Support
-                    handleReset();
-
-                    // Wait a moment for the reset to complete
-                    setTimeout(() => {
-                      navigateToChildren(supportPoint);
-
-                      // Wait for navigation to complete
-                      setTimeout(() => {
-                        // Now try to find Documentation in the current series
-                        if (
-                          currentSeries &&
-                          currentSeries.length > 0 &&
-                          currentSeries[0] &&
-                          currentSeries[0].data
-                        ) {
-                          const docPoint = currentSeries[0].data.find(
-                            (point) =>
-                              point.axis === "Documentation" ||
-                              point.axis.includes("Documentation")
-                          );
-
-                          if (docPoint) {
-                            console.log(
-                              "Found Documentation point, navigating to it"
-                            );
-                            navigateToChildren(docPoint);
-                          }
-                        }
-                      }, 300);
-                    }, 100);
-                  }
-                }
-              }
-
-              return;
-            }
-
-            console.log("Current series length:", currentSeries.length);
-
-            // Find the data point with this axis name
-            let foundDataPoint = false;
-            let dataPoint = null;
-
-            for (const series of currentSeries) {
-              console.log(
-                "Series data:",
-                series.data.map((p) => p.axis)
-              );
-
-              // Try exact match first
-              dataPoint = series.data.find((p) => p.axis === d);
-
-              // If no exact match, try a fuzzy match
-              if (!dataPoint) {
-                // Try to match with "Documentation" if the label contains it
-                if (d.includes("Documentation")) {
-                  dataPoint = series.data.find(
-                    (p) =>
-                      p.axis === "Documentation" ||
-                      p.axis.includes("Documentation")
-                  );
-                  if (dataPoint) {
-                    console.log("Found Documentation via fuzzy match");
-                  }
-                }
-              }
-
-              if (dataPoint) {
-                foundDataPoint = true;
-
-                if (dataPoint.children && dataPoint.children.length > 0) {
-                  console.log("Children found:", dataPoint.children.length);
-
-                  // Call custom onClick handler if it exists
-                  if (typeof dataPoint.onClick === "function") {
-                    console.log("Calling custom onClick handler");
-                    const result = dataPoint.onClick();
-                    console.log("onClick handler returned:", result);
-                    if (result === false) {
-                      console.log(
-                        "onClick handler returned false, skipping navigation"
-                      );
-                      return; // Skip navigation if handler returns false
-                    }
-                  }
-
-                  console.log("Proceeding with navigation to children");
-                  navigateToChildren(dataPoint);
-                  break;
-                } else {
-                  console.log(
-                    "No children found or children array is empty for:",
-                    dataPoint.axis
-                  );
-                }
-              }
-            }
-
-            if (!foundDataPoint) {
-              console.log("No data point found with axis:", d);
-              console.log(
-                "Available axes:",
-                currentSeries.flatMap((s) => s.data.map((p) => p.axis))
-              );
-            }
-          });
-        } else {
-          // Set default cursor for non-clickable labels
-          group.style("cursor", "default");
-        }
       });
     }
   }
