@@ -2,22 +2,31 @@
   import type { SpiderDataPoint, SpiderChartSeries } from "./types";
   import { onMount } from "svelte";
 
-  export let visible = false;
-  export let x = 0;
-  export let y = 0;
-  export let dataPoint: SpiderDataPoint | null = null;
-  export let series: SpiderChartSeries | null = null;
-  export let tooltipClass: string = "spider-chart-tooltip";
+  const {
+    visible = false,
+    x = 0,
+    y = 0,
+    dataPoint = null,
+    series = null,
+    tooltipClass = "spider-chart-tooltip",
+  } = $props<{
+    visible: boolean;
+    x: number;
+    y: number;
+    dataPoint: SpiderDataPoint | null;
+    series: SpiderChartSeries | null;
+    tooltipClass: string;
+  }>();
 
   // Reference to the chart container
-  let chartContainer: HTMLElement | null = null;
+  let chartContainer = $state<HTMLElement | null>(null);
 
-  // Variables to store adjusted positions
-  let adjustedX = 0;
-  let adjustedY = 0;
+  // Variables to store adjusted positions - using $state for reactivity in Svelte 5
+  let adjustedX = $state(0);
+  let adjustedY = $state(0);
 
   // Browser check
-  let isBrowser = false;
+  let isBrowser = $state(false);
 
   onMount(() => {
     isBrowser = true;
@@ -28,46 +37,86 @@
 
   // Update positions when coordinates change
   function updatePositions() {
-    if (isBrowser && visible && chartContainer) {
-      // Get the SVG element's position
-      const svgRect = chartContainer.getBoundingClientRect();
-
-      // Get the chart group's transform
-      const chartGroup = chartContainer.querySelector("g");
-      let offsetX = 0;
-      let offsetY = 0;
-
-      if (chartGroup) {
-        const transform = chartGroup.getAttribute("transform");
-        if (transform) {
-          const match = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
-          if (match && match[1] && match[2]) {
-            offsetX = parseFloat(match[1]);
-            offsetY = parseFloat(match[2]);
-          }
-        }
-      }
-
-      // Convert SVG coordinates to screen coordinates
-      const screenX = svgRect.left + offsetX + x + 15; // Add a small offset
-      const screenY = svgRect.top + offsetY + y;
-
-      // Ensure tooltip stays within viewport
-      adjustedX = Math.min(
-        screenX,
-        typeof window !== "undefined" ? window.innerWidth - 200 : screenX
-      );
-      adjustedY = Math.min(
-        screenY,
-        typeof window !== "undefined" ? window.innerHeight - 100 : screenY
-      );
-    } else {
+    if (!isBrowser || !visible) {
       adjustedX = 0;
       adjustedY = 0;
+      return;
     }
+
+    if (!chartContainer) {
+      // Try to find the chart container again
+      chartContainer = document.querySelector(".spider-chart");
+      if (!chartContainer) {
+        console.error("Tooltip: Could not find chart container");
+        return;
+      }
+    }
+
+    // Get the SVG element
+    const svgElement = chartContainer.querySelector("svg");
+    if (!svgElement) {
+      console.error("Tooltip: Could not find SVG element");
+      return;
+    }
+
+    // Get the SVG element's position
+    const svgRect = svgElement.getBoundingClientRect();
+
+    // Get the chart group's transform
+    const chartGroup = svgElement.querySelector("g");
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (chartGroup) {
+      const transform = chartGroup.getAttribute("transform");
+      if (transform) {
+        const match = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+        if (match && match[1] && match[2]) {
+          offsetX = parseFloat(match[1]);
+          offsetY = parseFloat(match[2]);
+        }
+      }
+    }
+
+    // Convert SVG coordinates to screen coordinates
+    // The x and y are relative to the chart group's center
+    const screenX = svgRect.left + offsetX + x + 15; // Add a small offset for tooltip
+    const screenY = svgRect.top + offsetY + y;
+
+    console.log("Tooltip positioning:", {
+      svgRect: { left: svgRect.left, top: svgRect.top },
+      offset: { x: offsetX, y: offsetY },
+      coords: { x, y },
+      screen: { x: screenX, y: screenY },
+    });
+
+    // Ensure tooltip stays within viewport
+    const tooltipWidth = 200; // Approximate width
+    const tooltipHeight = 100; // Approximate height
+
+    adjustedX = Math.min(
+      screenX,
+      typeof window !== "undefined" ? window.innerWidth - tooltipWidth : screenX
+    );
+
+    adjustedY = Math.min(
+      screenY,
+      typeof window !== "undefined"
+        ? window.innerHeight - tooltipHeight
+        : screenY
+    );
+
+    // Ensure tooltip doesn't go off the left or top edge
+    adjustedX = Math.max(10, adjustedX);
+    adjustedY = Math.max(10, adjustedY);
   }
 
-  $: if (visible || x || y) updatePositions();
+  // Update positions when visible, x, or y changes
+  $effect(() => {
+    if (visible || x !== 0 || y !== 0) {
+      updatePositions();
+    }
+  });
 </script>
 
 {#if visible && dataPoint && series}

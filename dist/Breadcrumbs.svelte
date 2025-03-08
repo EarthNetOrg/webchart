@@ -1,31 +1,47 @@
 <script lang="ts">
   import type { SpiderDataPoint } from "./types";
 
-  export let path: SpiderDataPoint[] = [];
-  export let onNavigate: (index: number) => void;
-  export let onReset: () => void;
-  export let title: string = "Home";
-  export let breadcrumbsClass: string = "breadcrumbs";
-  export let breadcrumbItemClass: string = "breadcrumb-item";
+  const {
+    path = [],
+    onNavigate,
+    onReset,
+    title = "Home",
+    breadcrumbsClass = "breadcrumbs",
+    breadcrumbItemClass = "breadcrumb-item",
+  } = $props<{
+    path: SpiderDataPoint[];
+    onNavigate: (index: number) => void;
+    onReset: () => void;
+    title: string;
+    breadcrumbsClass: string;
+    breadcrumbItemClass: string;
+  }>();
+
+  // Event handlers
+  function handleReset() {
+    onReset();
+  }
+
+  function handleNavigate(index: number) {
+    onNavigate(index);
+  }
 </script>
 
 {#if path.length > 0}
   <div class={breadcrumbsClass}>
     <button
       class="breadcrumb-item"
-      on:click={onReset}
+      onclick={handleReset}
       title="Return to main chart"
     >
       {title}
     </button>
 
-    {#each path as item, index}
+    {#each path.slice(0, path.length - 1) as item, index}
       <span class="separator">›</span>
       <button
-        class="{breadcrumbItemClass} {index === path.length - 1
-          ? 'active'
-          : ''}"
-        on:click={() => onNavigate(index)}
+        class={breadcrumbItemClass}
+        onclick={() => handleNavigate(index)}
         title={item.description || item.axis}
       >
         {item.axis}

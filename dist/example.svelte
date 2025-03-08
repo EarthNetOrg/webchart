@@ -262,110 +262,106 @@
     },
   ];
 
-  // Custom configuration
-  const config = {
+  // Configuration options
+  const basicConfig = {
+    interactive: true,
+    showAxisLabels: true,
+    showAxisLines: true,
+    showLevelLabels: true,
+    levels: 5,
     min: 0,
     max: 100,
-    levels: 5,
-    color: "#ff3e00",
-    opacity: 0.7,
+    opacity: 0.5,
     strokeWidth: 2,
-    animationDuration: 800,
-    showLevelLabels: true,
+    animationDuration: 500,
+  };
+
+  // Custom configuration for multi-series
+  const multiSeriesConfig = {
+    ...basicConfig,
+    opacity: 0.3, // More transparent for overlapping series
+    strokeWidth: 3, // Thicker lines for better visibility
+  };
+
+  // Custom configuration for hierarchical data
+  const hierarchicalConfig = {
+    ...basicConfig,
+    interactive: true, // Enable interactivity for drill-down
+    showLegend: true, // Show legend for hierarchical data
   };
 </script>
 
-<div class="examples">
-  <h1>Svelte Spider Chart Examples</h1>
+<div class="examples-container">
+  <h1>Spider Chart Examples</h1>
 
   <div class="example">
-    <h2>Basic Example</h2>
+    <h2>Basic Spider Chart</h2>
     <div class="chart-container">
       <SpiderChart
         data={basicData}
-        {config}
+        config={basicConfig}
         title="Character Stats"
-        description="A visual representation of character attributes"
-        rationale="These stats are used to determine character abilities in gameplay"
+        description="Basic stats for a character"
+        rationale="Higher values indicate better performance"
       />
     </div>
   </div>
 
   <div class="example">
-    <h2>Multiple Series Example</h2>
+    <h2>Multi-Series Spider Chart</h2>
     <div class="chart-container">
       <SpiderChart
         data={multiSeriesData}
+        config={multiSeriesConfig}
         title="Character Comparison"
-        description="Comparing the attributes of two different characters"
-        rationale="This comparison helps in balancing character abilities for fair gameplay"
+        description="Comparing stats between two characters"
+        rationale="Each character has different strengths and weaknesses"
       />
     </div>
   </div>
 
   <div class="example">
-    <h2>Hierarchical Data Example</h2>
-    <p>Click on any axis to drill down into its details</p>
-    <p>
-      <strong>Note:</strong> Parent values are calculated as the average of their
-      children's values
-    </p>
+    <h2>Hierarchical Spider Chart (Interactive)</h2>
     <div class="chart-container">
       <SpiderChart
         data={hierarchicalData}
+        config={hierarchicalConfig}
         title="Product Evaluation"
-        description="Comprehensive assessment of product qualities"
-        rationale="This evaluation is used for product development prioritization and marketing"
-      />
-    </div>
-  </div>
-
-  <div class="example">
-    <h2>Nested Hierarchical Data Example</h2>
-    <p>
-      Demonstrates recursive calculation of values from deeply nested children
-    </p>
-    <div class="chart-container">
-      <SpiderChart
-        data={nestedHierarchicalData}
-        title="Multi-level Product Quality Assessment"
-        description="Hierarchical evaluation with multiple levels"
-        rationale="Values are calculated by averaging all child values recursively"
+        description="Click on any axis to see detailed breakdown"
+        rationale="Values are calculated as averages of child metrics"
       />
     </div>
   </div>
 </div>
 
 <style>
-  .examples {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-      Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  .examples-container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+    font-family: Arial, sans-serif;
   }
 
   h1 {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 30px;
   }
 
   .example {
-    margin-bottom: 60px;
-    border: 1px solid #eee;
-    border-radius: 8px;
+    margin-bottom: 50px;
     padding: 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border: 1px solid #ddd;
+    border-radius: 8px;
   }
 
   h2 {
     margin-top: 0;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
+    margin-bottom: 20px;
+    color: #333;
   }
 
   .chart-container {
-    height: 400px;
-    margin-top: 20px;
+    height: 500px;
+    width: 100%;
   }
 </style>

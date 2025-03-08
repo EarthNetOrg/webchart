@@ -26,6 +26,11 @@ export interface SpiderDataPoint {
      * Optional nested data points for drill-down functionality
      */
     children?: SpiderDataPoint[];
+    /**
+     * Optional custom click handler for this data point
+     * Return false to prevent default navigation
+     */
+    onClick?: () => boolean;
 }
 /**
  * Configuration for the Spider Chart

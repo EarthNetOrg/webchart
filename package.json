@@ -1,6 +1,6 @@
 {
   "name": "svelte-spider-chart",
-  "version": "0.1.7",
+  "version": "0.1.9.7",
   "description": "Interactive Spider Chart component for Svelte 5",
   "type": "module",
   "main": "./dist/index.js",
@@ -25,7 +25,10 @@
     "check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "dev:test": "vite -c test/vite.config.js",
+    "build:test": "vite build -c test/vite.config.js",
+    "preview:test": "vite preview -c test/vite.config.js"
   },
   "keywords": [
     "svelte",

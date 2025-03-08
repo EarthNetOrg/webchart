@@ -5,11 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.9.11] - 2024-07-15
+
+### Fixed
+- Fixed persistent issue with breadcrumb navigation where clicking on Support would still display the top-level chart
+- Added special handling for Support level navigation to ensure correct data is displayed
+- Improved navigation logic to prioritize finding data in the original dataset before falling back to history
+- Enhanced parent-child relationship tracking for more reliable navigation between levels
+
+## [0.1.9.10] - 2024-07-15
+
+### Fixed
+- Fixed issue where chart axes weren't updating correctly when navigating with breadcrumbs
+- Improved series restoration from history with proper deep cloning
+- Added recursive search for data points in the original data to ensure complete information
+- Enhanced fallback mechanisms when history data is unavailable or incomplete
+
+## [0.1.9.9] - 2024-07-15
+
+### Fixed
+- Fixed breadcrumb navigation issue where clicking on Support would display the Home level instead of the Support level
+- Improved history management in breadcrumb navigation to ensure correct state restoration
+- Added fallback navigation mechanism when history is not available
+- Enhanced tooltip positioning with proper state management in Svelte 5
+
+## [0.1.9.8] - 2024-07-15
+
+### Fixed
+- Fixed breadcrumb navigation issue when clicking on Support after navigating to Documentation
+- Fixed tooltip positioning issue where tooltips would appear in the top-left corner
+- Added proper state management for tooltip positioning in Svelte 5
+- Improved error handling in tooltip positioning logic
+
+## [0.1.9.7] - 2024-07-15
+
+### Fixed
+- Fixed issue with Documentation axis navigation when clicking directly on the axis
+- Added special handling for Documentation axis to ensure proper navigation path
+- Improved reactivity with enhanced state management for navigation paths
+- Cleaned up console logs to reduce verbosity while maintaining essential debugging information
+
+### Changed
+- Enhanced the reactive effect system to ensure currentSeries is always properly populated
+- Added more robust error checking throughout the navigation process
+- Improved user experience by providing better fallback mechanisms for navigation
+
 ## [0.1.7] - 2024-07-11
 
 ### Added
 - Enhanced title display to show the current axis name when viewing children charts
-- Improved navigation context by dynamically updating the title based on the current drill-down level
+- Updated description to show "Viewing details for [axis name]" when navigating to children
+- Added support for displaying axis-specific rationale text when available
+- Improved navigation context by dynamically updating all text elements based on the current drill-down level
+
+### Changed
+- Modified Breadcrumbs component to not display the current axis in the navigation path
+- Simplified breadcrumb navigation by only showing parent levels, avoiding redundancy with the title
 
 ## [0.1.6] - 2024-07-10
 

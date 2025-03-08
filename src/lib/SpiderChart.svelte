@@ -14,25 +14,38 @@
   import Tooltip from "./Tooltip.svelte";
   import Breadcrumbs from "./Breadcrumbs.svelte";
 
-  // Props with defaults
-  export let data: SpiderDataPoint[] | SpiderChartSeries[] = [];
-  export let config = {};
-  export let title: string | undefined = undefined;
-  export let description: string | undefined = undefined;
-  export let rationale: string | undefined = undefined;
-  export let width: string | number = "100%";
-  export let height: string | number = "100%";
-  export let className: string = "";
-
-  // Custom class props with defaults
-  export let titleClass: string = "spider-chart-title";
-  export let descriptionClass: string = "spider-chart-description";
-  export let rationaleClass: string = "spider-chart-rationale";
-  export let breadcrumbsClass: string = "";
-  export let breadcrumbItemClass: string = "breadcrumb-item";
-
-  // Tooltip customization props
-  export let tooltipClass: string = "spider-chart-tooltip";
+  // Props with defaults using Svelte 5 runes syntax
+  const {
+    data = [],
+    config = {},
+    title = undefined,
+    description = undefined,
+    rationale = undefined,
+    width = "100%",
+    height = "100%",
+    className = "",
+    titleClass = "spider-chart-title",
+    descriptionClass = "spider-chart-description",
+    rationaleClass = "spider-chart-rationale",
+    breadcrumbsClass = "",
+    breadcrumbItemClass = "breadcrumb-item",
+    tooltipClass = "spider-chart-tooltip",
+  } = $props<{
+    data: SpiderDataPoint[] | SpiderChartSeries[];
+    config: any;
+    title?: string;
+    description?: string;
+    rationale?: string;
+    width: string | number;
+    height: string | number;
+    className: string;
+    titleClass: string;
+    descriptionClass: string;
+    rationaleClass: string;
+    breadcrumbsClass: string;
+    breadcrumbItemClass: string;
+    tooltipClass: string;
+  }>();
 
   // Internal state
   let chartElement: HTMLDivElement;
@@ -42,22 +55,55 @@
   let svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
   let chartGroup: d3.Selection<SVGGElement, unknown, null, undefined>;
 
-  // Navigation state
-  let currentSeries: SpiderChartSeries[] = [];
-  let navigationPath: SpiderDataPoint[] = [];
-  let navigationHistory: SpiderChartSeries[][] = [];
+  // Navigation state with $state for reactivity in Svelte 5
+  let currentSeries = $state<SpiderChartSeries[]>([]);
+  let navigationPath = $state<SpiderDataPoint[]>([]);
+  let navigationHistory = $state<SpiderChartSeries[][]>([]);
 
-  // Tooltip state
-  let tooltipVisible = false;
-  let tooltipX = 0;
-  let tooltipY = 0;
-  let tooltipDataPoint: SpiderDataPoint | null = null;
-  let tooltipSeries: SpiderChartSeries | null = null;
+  // Tooltip state with $state for reactivity in Svelte 5
+  let tooltipVisible = $state(false);
+  let tooltipX = $state(0);
+  let tooltipY = $state(0);
+  let tooltipDataPoint = $state<SpiderDataPoint | null>(null);
+  let tooltipSeries = $state<SpiderChartSeries | null>(null);
 
-  // Reactive declarations
-  $: mergedConfig = mergeConfig(config);
-  $: normalizedData = normalizeData(data);
-  $: currentSeries = navigationPath.length === 0 ? normalizedData : [];
+  // Reactive declarations using Svelte 5 runes
+  const mergedConfig = $derived(mergeConfig(config));
+  const normalizedData = $derived(normalizeData(data));
+
+  // Effect to ensure currentSeries is always populated
+  $effect(() => {
+    if (navigationPath.length === 0) {
+      // At top level, use normalized data
+      currentSeries = normalizedData;
+    } else if (currentSeries.length === 0 && navigationPath.length > 0) {
+      // If we have a navigation path but empty currentSeries, try to rebuild it
+      const lastPathItem = navigationPath[navigationPath.length - 1];
+      if (lastPathItem) {
+        console.log(
+          "Rebuilding currentSeries from navigationPath, last item:",
+          lastPathItem.axis
+        );
+
+        if (lastPathItem.children && lastPathItem.children.length > 0) {
+          currentSeries = [
+            {
+              name: lastPathItem.axis,
+              data: JSON.parse(JSON.stringify(lastPathItem.children)),
+            },
+          ];
+        } else {
+          console.warn(
+            "Last path item has no children, cannot rebuild currentSeries"
+          );
+        }
+      } else {
+        console.warn(
+          "Navigation path is invalid, cannot rebuild currentSeries"
+        );
+      }
+    }
+  });
 
   // Initialize the chart
   function initializeChart() {
@@ -97,14 +143,18 @@
 
   // Update the chart when data or dimensions change
   function updateChart() {
+    console.log("Updating chart with currentSeries:", currentSeries);
+
     if (
       !chartElement ||
       !svg ||
       !chartGroup ||
       containerWidth === 0 ||
       containerHeight === 0
-    )
+    ) {
+      console.error("Cannot update chart: missing elements or dimensions");
       return;
+    }
 
     const { margin } = mergedConfig;
     const dimensions = calculateChartDimensions(
@@ -128,6 +178,8 @@
     });
 
     const axesArray = Array.from(allAxes);
+    console.log("Axes for chart:", axesArray);
+
     const angleSlice = (Math.PI * 2) / axesArray.length;
 
     // Draw the circular grid
@@ -392,18 +444,143 @@
           group.style("cursor", "pointer");
 
           // Add click handler
-          group.on("click", () => {
-            // Find the data point with this axis name
-            for (const series of currentSeries) {
-              const dataPoint = series.data.find((p) => p.axis === d);
-              if (
-                dataPoint &&
-                dataPoint.children &&
-                dataPoint.children.length > 0
-              ) {
-                navigateToChildren(dataPoint);
-                break;
+          group.on("click", (event: MouseEvent) => {
+            // Stop event propagation to prevent multiple handlers from firing
+            event.stopPropagation();
+
+            console.log("Click on axis:", d);
+
+            // Check if currentSeries is empty
+            if (!currentSeries || currentSeries.length === 0) {
+              console.error(
+                "Current series is empty when clicking on axis:",
+                d
+              );
+
+              // Special handling for Documentation axis
+              if (d === "Documentation" || d.includes("Documentation")) {
+                console.log("Special handling for Documentation axis");
+
+                // Try to find the Support item in the normalized data
+                const supportSeries = normalizedData.find((series) =>
+                  series.data.some((point) => point.axis === "Support")
+                );
+
+                if (supportSeries && supportSeries.data) {
+                  const supportPoint = supportSeries.data.find(
+                    (point) => point.axis === "Support"
+                  );
+
+                  if (supportPoint && supportPoint.children) {
+                    console.log(
+                      "Found Support point with children, navigating to it first"
+                    );
+
+                    // First navigate to Support
+                    handleReset();
+
+                    // Wait a moment for the reset to complete
+                    setTimeout(() => {
+                      navigateToChildren(supportPoint);
+
+                      // Wait for navigation to complete
+                      setTimeout(() => {
+                        // Now try to find Documentation in the current series
+                        if (
+                          currentSeries &&
+                          currentSeries.length > 0 &&
+                          currentSeries[0] &&
+                          currentSeries[0].data
+                        ) {
+                          const docPoint = currentSeries[0].data.find(
+                            (point) =>
+                              point.axis === "Documentation" ||
+                              point.axis.includes("Documentation")
+                          );
+
+                          if (docPoint) {
+                            console.log(
+                              "Found Documentation point, navigating to it"
+                            );
+                            navigateToChildren(docPoint);
+                          }
+                        }
+                      }, 300);
+                    }, 100);
+                  }
+                }
               }
+
+              return;
+            }
+
+            console.log("Current series length:", currentSeries.length);
+
+            // Find the data point with this axis name
+            let foundDataPoint = false;
+            let dataPoint = null;
+
+            for (const series of currentSeries) {
+              console.log(
+                "Series data:",
+                series.data.map((p) => p.axis)
+              );
+
+              // Try exact match first
+              dataPoint = series.data.find((p) => p.axis === d);
+
+              // If no exact match, try a fuzzy match
+              if (!dataPoint) {
+                // Try to match with "Documentation" if the label contains it
+                if (d.includes("Documentation")) {
+                  dataPoint = series.data.find(
+                    (p) =>
+                      p.axis === "Documentation" ||
+                      p.axis.includes("Documentation")
+                  );
+                  if (dataPoint) {
+                    console.log("Found Documentation via fuzzy match");
+                  }
+                }
+              }
+
+              if (dataPoint) {
+                foundDataPoint = true;
+
+                if (dataPoint.children && dataPoint.children.length > 0) {
+                  console.log("Children found:", dataPoint.children.length);
+
+                  // Call custom onClick handler if it exists
+                  if (typeof dataPoint.onClick === "function") {
+                    console.log("Calling custom onClick handler");
+                    const result = dataPoint.onClick();
+                    console.log("onClick handler returned:", result);
+                    if (result === false) {
+                      console.log(
+                        "onClick handler returned false, skipping navigation"
+                      );
+                      return; // Skip navigation if handler returns false
+                    }
+                  }
+
+                  console.log("Proceeding with navigation to children");
+                  navigateToChildren(dataPoint);
+                  break;
+                } else {
+                  console.log(
+                    "No children found or children array is empty for:",
+                    dataPoint.axis
+                  );
+                }
+              }
+            }
+
+            if (!foundDataPoint) {
+              console.log("No data point found with axis:", d);
+              console.log(
+                "Available axes:",
+                currentSeries.flatMap((s) => s.data.map((p) => p.axis))
+              );
             }
           });
         } else {
@@ -576,47 +753,316 @@
   }
 
   // Navigate to children of a data point
-  function navigateToChildren(dataPoint: SpiderDataPoint) {
-    if (!dataPoint.children || dataPoint.children.length === 0) return;
+  export function navigateToChildren(dataPoint: SpiderDataPoint) {
+    console.log("Navigating to children of:", dataPoint.axis);
+
+    if (!dataPoint) {
+      console.error("Cannot navigate: dataPoint is null or undefined");
+      return;
+    }
+
+    if (!dataPoint.children || dataPoint.children.length === 0) {
+      console.log("No children to navigate to for:", dataPoint.axis);
+      return;
+    }
+
+    console.log(
+      "Navigation path before:",
+      navigationPath.map((p) => p.axis)
+    );
 
     // Save current state in history
-    navigationHistory.push(currentSeries);
+    navigationHistory.push(JSON.parse(JSON.stringify(currentSeries)));
 
     // Update navigation path
     navigationPath = [...navigationPath, dataPoint];
+    console.log(
+      "Navigation path after:",
+      navigationPath.map((p) => p.axis)
+    );
 
     // Create new series from children
-    currentSeries = [
-      {
-        name: dataPoint.axis,
-        data: dataPoint.children,
-      },
-    ];
+    const newSeries = {
+      name: dataPoint.axis,
+      data: JSON.parse(JSON.stringify(dataPoint.children)),
+    };
 
-    // Update chart
+    console.log("Children data length:", newSeries.data.length);
+
+    // Ensure the children data is valid
+    if (!newSeries.data || newSeries.data.length === 0) {
+      console.error("Children data is empty or invalid");
+      return;
+    }
+
+    // Update current series
+    currentSeries = [newSeries];
+
+    // Update chart immediately
     updateChart();
   }
 
   // Navigate to a specific level in the path
-  function handleNavigate(index: number) {
-    if (index >= navigationPath.length - 1) return;
+  export function handleNavigate(index: number) {
+    console.log(
+      "Navigating to index:",
+      index,
+      "current path length:",
+      navigationPath.length
+    );
 
-    // Truncate path
-    navigationPath = navigationPath.slice(0, index + 1);
+    if (index >= navigationPath.length - 1) {
+      console.log("Invalid navigation index");
+      return;
+    }
+
+    // Store the new path before making other changes
+    const newPath = navigationPath.slice(0, index + 1);
+    console.log(
+      "New navigation path:",
+      newPath.map((p) => p.axis)
+    );
+
+    // Special case: if we're navigating to Support directly
+    if (newPath.length > 0 && newPath[newPath.length - 1].axis === "Support") {
+      console.log("Special handling for Support navigation");
+
+      // Find Support in the original data
+      const supportSeries = normalizedData.find((series) =>
+        series.data.some((point) => point.axis === "Support")
+      );
+
+      if (supportSeries) {
+        const supportPoint = supportSeries.data.find(
+          (point) => point.axis === "Support"
+        );
+
+        if (supportPoint && supportPoint.children) {
+          console.log(
+            "Found Support point in original data, using its children"
+          );
+
+          // Set the navigation path
+          navigationPath = newPath;
+
+          // Create a new series from the Support children
+          currentSeries = [
+            {
+              name: "Support",
+              data: JSON.parse(JSON.stringify(supportPoint.children)),
+            },
+          ];
+
+          // Update history
+          navigationHistory = navigationHistory.slice(0, index);
+
+          // Force update the chart
+          setTimeout(() => updateChart(), 50);
+          return;
+        }
+      }
+    }
 
     // Restore series from history
-    currentSeries = navigationHistory[index] || [];
-    navigationHistory = navigationHistory.slice(0, index);
+    if (index < 0) {
+      // Reset to top level
+      navigationPath = [];
+      navigationHistory = [];
+      currentSeries = JSON.parse(JSON.stringify(normalizedData));
+    } else {
+      // Set the path first to ensure reactivity works correctly
+      navigationPath = newPath;
 
-    // Update chart
-    updateChart();
+      // Try to find the data for this level directly from the original data
+      const lastPathItem = newPath[newPath.length - 1];
+      if (lastPathItem) {
+        console.log("Looking for data for:", lastPathItem.axis);
+
+        // Try to find this item in the original data
+        let foundOriginalData = false;
+
+        // If it's a top-level item
+        if (newPath.length === 1) {
+          // Just use normalized data
+          currentSeries = JSON.parse(JSON.stringify(normalizedData));
+          foundOriginalData = true;
+        } else if (newPath.length > 1) {
+          // It's a nested item, try to find its parent
+          const parentItem = newPath[newPath.length - 2];
+          console.log("Looking for parent item:", parentItem.axis);
+
+          // Find the parent in the original data
+          for (const series of normalizedData) {
+            const parentPoint = series.data.find(
+              (p) => p.axis === parentItem.axis
+            );
+            if (parentPoint && parentPoint.children) {
+              // Found the parent, now find the current item
+              const currentPoint = parentPoint.children.find(
+                (p) => p.axis === lastPathItem.axis
+              );
+              if (currentPoint && currentPoint.children) {
+                console.log("Found item in original data:", currentPoint.axis);
+
+                // Create a new series from the children
+                currentSeries = [
+                  {
+                    name: currentPoint.axis,
+                    data: JSON.parse(JSON.stringify(currentPoint.children)),
+                  },
+                ];
+
+                foundOriginalData = true;
+                break;
+              }
+            }
+          }
+        }
+
+        // If we couldn't find the data in the original data, try the history
+        if (!foundOriginalData) {
+          console.log("Could not find data in original data, trying history");
+
+          if (index < navigationHistory.length) {
+            const historySeries = navigationHistory[index];
+            if (historySeries && historySeries.length > 0) {
+              console.log("Restoring series from history at index:", index);
+
+              // Deep clone to avoid reference issues
+              currentSeries = JSON.parse(JSON.stringify(historySeries));
+
+              // Only truncate history up to the index we're navigating to
+              navigationHistory = navigationHistory.slice(0, index);
+
+              console.log("Current series after restore:", currentSeries);
+            } else {
+              console.warn(
+                "History entry is undefined or empty at index:",
+                index
+              );
+              rebuildSeriesFromPath(newPath);
+            }
+          } else {
+            console.warn(
+              "History index out of bounds:",
+              index,
+              "history length:",
+              navigationHistory.length
+            );
+            rebuildSeriesFromPath(newPath);
+          }
+        } else {
+          // We found the data in the original data, update history
+          navigationHistory = navigationHistory.slice(0, index);
+        }
+      } else {
+        console.warn("No last path item found, using fallback");
+        rebuildSeriesFromPath(newPath);
+      }
+    }
+
+    // Force a redraw of the chart after a short delay to ensure state is updated
+    setTimeout(() => {
+      console.log("Forcing chart update after navigation");
+      updateChart();
+    }, 50);
+  }
+
+  // Helper function to rebuild series from path
+  function rebuildSeriesFromPath(path: SpiderDataPoint[]) {
+    if (path.length === 0) {
+      currentSeries = JSON.parse(JSON.stringify(normalizedData));
+      return;
+    }
+
+    // Get the last item in the path
+    const lastPathItem = path[path.length - 1];
+    if (lastPathItem && lastPathItem.children) {
+      console.log("Rebuilding series from last path item:", lastPathItem.axis);
+
+      // Try to find the original data point in the normalized data to ensure we have all properties
+      let originalDataPoint = null;
+
+      // Search through all series in normalized data
+      for (const series of normalizedData) {
+        // First check if it's in the top level
+        const topLevelMatch = series.data.find(
+          (p) => p.axis === lastPathItem.axis
+        );
+        if (topLevelMatch) {
+          originalDataPoint = topLevelMatch;
+          break;
+        }
+
+        // If not found at top level, search through children recursively
+        for (const point of series.data) {
+          if (point.children) {
+            const foundPoint = findPointInChildren(
+              point.children,
+              lastPathItem.axis
+            );
+            if (foundPoint) {
+              originalDataPoint = foundPoint;
+              break;
+            }
+          }
+        }
+
+        if (originalDataPoint) break;
+      }
+
+      // Use the original data point if found, otherwise use the path item
+      const dataToUse = originalDataPoint || lastPathItem;
+
+      // Ensure we have children data before creating the series
+      if (dataToUse.children && dataToUse.children.length > 0) {
+        currentSeries = [
+          {
+            name: dataToUse.axis,
+            data: JSON.parse(JSON.stringify(dataToUse.children)),
+          },
+        ];
+        console.log(
+          "Rebuilt series from navigation path as fallback, data length:",
+          currentSeries[0].data.length
+        );
+      } else {
+        console.error("Data point has no children, cannot rebuild series");
+        // Fallback to normalized data if we can't rebuild
+        currentSeries = JSON.parse(JSON.stringify(normalizedData));
+      }
+    } else {
+      console.error("Could not rebuild series, navigation may be incomplete");
+      // Fallback to normalized data
+      currentSeries = JSON.parse(JSON.stringify(normalizedData));
+    }
+  }
+
+  // Helper function to find a data point in children by axis name
+  function findPointInChildren(
+    children: SpiderDataPoint[],
+    axisName: string
+  ): SpiderDataPoint | null {
+    for (const child of children) {
+      if (child.axis === axisName) {
+        return child;
+      }
+
+      if (child.children) {
+        const found = findPointInChildren(child.children, axisName);
+        if (found) return found;
+      }
+    }
+
+    return null;
   }
 
   // Reset to top level
-  function handleReset() {
+  export function handleReset() {
+    console.log("Resetting to top level");
     navigationPath = [];
     navigationHistory = [];
-    currentSeries = normalizedData;
+    currentSeries = JSON.parse(JSON.stringify(normalizedData));
     updateChart();
   }
 
@@ -660,12 +1106,108 @@
     }
   });
 
-  // Watch for data changes
-  $: if (normalizedData && svg) {
-    if (navigationPath.length === 0) {
-      currentSeries = normalizedData;
-      updateChart();
+  // Test function to directly navigate to a specific data point
+  export function testNavigateToDocumentation() {
+    console.log("Test navigation to Documentation");
+
+    // First navigate to Support
+    const supportSeries = normalizedData.find((series) =>
+      series.data.some((point) => point.axis === "Support")
+    );
+
+    if (!supportSeries) {
+      console.error("Support series not found in normalizedData");
+      console.log(
+        "Available series:",
+        normalizedData.map((s) => s.name)
+      );
+      return;
     }
+
+    const supportPoint = supportSeries.data.find(
+      (point) => point.axis === "Support"
+    );
+
+    if (!supportPoint) {
+      console.error("Support point not found");
+      console.log(
+        "Available points in series:",
+        supportSeries.data.map((p) => p.axis)
+      );
+      return;
+    }
+
+    console.log("Found Support point:", supportPoint);
+
+    // Reset to top level first to ensure clean navigation
+    handleReset();
+
+    // Wait a moment for the reset to complete
+    setTimeout(() => {
+      // Navigate to Support
+      navigateToChildren(supportPoint);
+
+      // Wait for navigation to complete
+      setTimeout(() => {
+        // Now find Documentation in the current series
+        if (!currentSeries || currentSeries.length === 0) {
+          console.error("Current series is empty after navigating to Support");
+          return;
+        }
+
+        // Make sure currentSeries[0] exists before accessing its properties
+        if (!currentSeries[0]) {
+          console.error("First series is undefined");
+          return;
+        }
+
+        console.log(
+          "Current series data:",
+          currentSeries[0].data.map((p) => p.axis)
+        );
+
+        const docPoint = currentSeries[0].data.find(
+          (point) => point.axis === "Documentation"
+        );
+
+        if (!docPoint) {
+          console.error("Documentation point not found in current series");
+          console.log(
+            "Available points:",
+            currentSeries[0].data.map((p) => p.axis)
+          );
+
+          // Try to find any point that contains "Documentation" in its name
+          const fuzzyDocPoint = currentSeries[0].data.find((point) =>
+            point.axis.includes("Documentation")
+          );
+
+          if (fuzzyDocPoint) {
+            console.log(
+              "Found a fuzzy match for Documentation:",
+              fuzzyDocPoint.axis
+            );
+            console.log("Navigating to fuzzy match");
+            navigateToChildren(fuzzyDocPoint);
+          } else {
+            console.error("No Documentation-like point found");
+          }
+
+          return;
+        }
+
+        console.log("Found Documentation point:", docPoint);
+
+        // Navigate to Documentation
+        navigateToChildren(docPoint);
+      }, 300);
+    }, 100);
+  }
+
+  // Force an update of the chart
+  export function forceUpdate() {
+    console.log("Forcing chart update");
+    updateChart();
   }
 </script>
 
@@ -690,13 +1232,26 @@
   {/if}
 
   {#if description}
-    <div class={descriptionClass}>{description}</div>
+    <div class={descriptionClass}>
+      {#if navigationPath.length > 0}
+        Viewing details for {navigationPath[navigationPath.length - 1]?.axis ||
+          ""}
+      {:else}
+        {description}
+      {/if}
+    </div>
   {/if}
 
   <div class="spider-chart" bind:this={chartElement}></div>
 
   {#if rationale}
-    <div class={rationaleClass}>{rationale}</div>
+    <div class={rationaleClass}>
+      {#if navigationPath.length > 0}
+        {navigationPath[navigationPath.length - 1]?.rationale || rationale}
+      {:else}
+        {rationale}
+      {/if}
+    </div>
   {/if}
 
   <Tooltip
