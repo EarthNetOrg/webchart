@@ -21,6 +21,9 @@ declare const SpiderChart: $$__sveltets_2_IsomorphicComponent<{
     width?: string | number;
     height?: string | number;
     className?: string;
+    titleClass?: string;
+    descriptionClass?: string;
+    rationaleClass?: string;
 }, {
     [evt: string]: CustomEvent<any>;
 }, {}, {}, string>;

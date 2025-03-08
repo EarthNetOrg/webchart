@@ -96,7 +96,7 @@ npm install svelte-spider-chart d3
 
 ## Hierarchical Data with Drill-down and Automatic Value Calculation
 
-The component automatically calculates parent values as the sum of their children's values. This calculation is recursive, starting from the deepest level and propagating upward.
+The component automatically calculates parent values as the average of their children's values. This calculation is recursive, starting from the deepest level and propagating upward.
 
 ```svelte
 <script>

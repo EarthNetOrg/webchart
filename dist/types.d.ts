@@ -143,4 +143,16 @@ export interface SpiderChartProps {
      * Optional CSS class to apply to the chart container
      */
     class?: string;
+    /**
+     * Optional CSS class to apply to the title element (default: "spider-chart-title")
+     */
+    titleClass?: string;
+    /**
+     * Optional CSS class to apply to the description element (default: "spider-chart-description")
+     */
+    descriptionClass?: string;
+    /**
+     * Optional CSS class to apply to the rationale element (default: "spider-chart-rationale")
+     */
+    rationaleClass?: string;
 }

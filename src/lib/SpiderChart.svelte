@@ -24,6 +24,11 @@
   export let height: string | number = "100%";
   export let className: string = "";
 
+  // Custom class props with defaults
+  export let titleClass: string = "spider-chart-title";
+  export let descriptionClass: string = "spider-chart-description";
+  export let rationaleClass: string = "spider-chart-rationale";
+
   // Internal state
   let chartElement: HTMLDivElement;
   let containerWidth = 0;
@@ -233,20 +238,20 @@
       labelGroups
         .append("rect")
         .attr("class", "axis-label-box")
-        .attr("x", (d: string) => -Math.max(d.length * 3.5, 15))
-        .attr("y", -10)
+        .attr("x", (d: string) => -Math.max(d.length * 3.5, 15) - 4)
+        .attr("y", -10 - 4)
         .attr("rx", 3)
         .attr("ry", 3)
-        .attr("width", (d: string) => Math.max(d.length * 7, 30))
-        .attr("height", 20)
+        .attr("width", (d: string) => Math.max(d.length * 7, 30) + 8)
+        .attr("height", 20 + 8)
         .attr("fill", (d: string) =>
           axesWithChildren.has(d) ? "#f8f9fa" : "#ffffff"
         )
         .attr("stroke", (d: string) =>
-          axesWithChildren.has(d) ? "#2196F3" : "#999999"
+          axesWithChildren.has(d) ? "#333333" : "#999999"
         )
         .attr("stroke-width", (d: string) =>
-          axesWithChildren.has(d) ? 2 : 1.5
+          axesWithChildren.has(d) ? 1.5 : 1
         )
         .attr("filter", (d: string) =>
           axesWithChildren.has(d) ? "url(#drop-shadow)" : "none"
@@ -367,7 +372,7 @@
               .select(".axis-label-box")
               .transition()
               .duration(200)
-              .attr("fill", "#ffffff");
+              .attr("fill", "#eeeeee");
 
             d3.select(el)
               .select(".axis-label-text")
@@ -661,11 +666,11 @@
 
 <div class="spider-chart-container {className}" style:width style:height>
   {#if description}
-    <div class="spider-chart-description">{description}</div>
+    <div class={descriptionClass}>{description}</div>
   {/if}
 
   {#if title}
-    <div class="spider-chart-title">{title}</div>
+    <div class={titleClass}>{title}</div>
   {/if}
 
   <Breadcrumbs
@@ -677,7 +682,7 @@
   <div class="spider-chart" bind:this={chartElement}></div>
 
   {#if rationale}
-    <div class="spider-chart-rationale">{rationale}</div>
+    <div class={rationaleClass}>{rationale}</div>
   {/if}
 
   <Tooltip
@@ -692,8 +697,6 @@
 <style>
   .spider-chart-container {
     position: relative;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-      Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
   }
 
   .spider-chart {
