@@ -289,23 +289,37 @@
           const x = (radius + 10) * Math.cos(angleSlice * i - Math.PI / 2);
           const y = (radius + 10) * Math.sin(angleSlice * i - Math.PI / 2);
           return `translate(${x}, ${y})`;
-        })
-        // Make the entire group clickable
+        });
+
+      // Add background boxes - these will be our clickable elements
+      labelGroups
+        .append("rect")
+        .attr("class", "axis-label-box")
+        .attr("x", (d: string) => -Math.max(d.length * 3.5, 15) - 25)
+        .attr("y", -10 - 25)
+        .attr("rx", 3)
+        .attr("ry", 3)
+        .attr("width", (d: string) => Math.max(d.length * 7, 30) + 50)
+        .attr("height", 20 + 50)
+        .attr("fill", "rgba(0,0,0,0)") // Completely transparent
+        .attr("stroke", "none") // No border
+        .attr("stroke-width", 0)
+        // Make the background boxes capture pointer events
         .style("pointer-events", "all")
         .style("cursor", (d: string) =>
           axesWithChildren.has(d) ? "pointer" : "default"
         );
 
-      // Add background boxes - make them larger to increase clickable area
+      // Add a second, visually smaller box on top to maintain the visual appearance
       labelGroups
         .append("rect")
-        .attr("class", "axis-label-box")
-        .attr("x", (d: string) => -Math.max(d.length * 3.5, 15) - 8)
-        .attr("y", -10 - 8)
+        .attr("class", "axis-label-visual-box")
+        .attr("x", (d: string) => -Math.max(d.length * 3.5, 15) - 4)
+        .attr("y", -10 - 4)
         .attr("rx", 3)
         .attr("ry", 3)
-        .attr("width", (d: string) => Math.max(d.length * 7, 30) + 16)
-        .attr("height", 20 + 16)
+        .attr("width", (d: string) => Math.max(d.length * 7, 30) + 8)
+        .attr("height", 20 + 8)
         .attr("fill", (d: string) =>
           axesWithChildren.has(d) ? "#f8f9fa" : "#ffffff"
         )
@@ -317,7 +331,8 @@
         )
         .attr("filter", (d: string) =>
           axesWithChildren.has(d) ? "url(#drop-shadow)" : "none"
-        );
+        )
+        .style("pointer-events", "none"); // This visual box doesn't capture events
 
       // Add text
       labelGroups
@@ -332,13 +347,16 @@
         .attr("font-weight", (d: string) =>
           axesWithChildren.has(d) ? "bold" : "normal"
         )
-        .text((d: string) => d);
+        .text((d: string) => d)
+        // Make sure text doesn't capture pointer events
+        .style("pointer-events", "none");
 
-      // Add click handlers directly to the label groups
+      // Add click handlers to the background boxes
       labelGroups
         .filter((d: string) => axesWithChildren.has(d))
+        .select(".axis-label-box") // Select the background box
         .on("click", function (event: MouseEvent, d: string) {
-          console.log("Label click on axis:", d);
+          console.log("Box click on axis:", d);
           event.stopPropagation();
 
           // Find the data point with this axis name
@@ -395,8 +413,9 @@
         }
 
         // Add hover effects and tooltip for all labels
-        group.on("mouseenter", function (this: any) {
-          const el = this as unknown as SVGGElement;
+        // Apply the hover handler to the background box
+        group.select(".axis-label-box").on("mouseenter", function (this: any) {
+          const el = element; // Use the parent element for visual effects
 
           // Get the position of the label for tooltip positioning
           const transform = el.getAttribute("transform");
@@ -448,8 +467,8 @@
           }
         });
 
-        group.on("mouseleave", function (this: any) {
-          const el = this as unknown as SVGGElement;
+        group.select(".axis-label-box").on("mouseleave", function (this: any) {
+          const el = element; // Use the parent element for visual effects
 
           // Hide tooltip
           tooltipVisible = false;

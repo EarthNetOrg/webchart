@@ -36,8 +36,6 @@ npm install svelte-spider-chart d3
   ];
   
   const config = {
-    min: 0,
-    max: 100,
     color: '#ff3e00',
     opacity: 0.7
   };
@@ -49,6 +47,8 @@ npm install svelte-spider-chart d3
   title="Character Stats" 
   description="A visual representation of character attributes"
   rationale="These stats are used to determine character abilities in gameplay"
+  min={0}
+  max={100}
 />
 ```
 
@@ -283,6 +283,8 @@ The component can handle multiple levels of nesting, with values calculated recu
 | `descriptionClass` | `string` | `'spider-chart-description'` | CSS class for the description element |
 | `rationaleClass` | `string` | `'spider-chart-rationale'` | CSS class for the rationale element |
 | `tooltipClass` | `string` | `'spider-chart-tooltip'` | CSS class for the tooltip element |
+| `min` | `number` | `0` | Minimum value for the chart (can also be set via config) |
+| `max` | `number` | `100` | Maximum value for the chart (can also be set via config) |
 
 ## Configuration Options
 
