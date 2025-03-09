@@ -275,13 +275,15 @@ The component can handle multiple levels of nesting, with values calculated recu
 | `config` | `SpiderChartConfig` | `{}` | Configuration options for the chart |
 | `title` | `string \| undefined` | `undefined` | Optional title for the chart |
 | `description` | `string \| undefined` | `undefined` | Optional description for the chart, displayed above the title |
-| `rationale` | `string \| undefined` | `undefined` | Optional rationale for the chart, displayed below the chart |
+| `rationale` | `string \| undefined` | `undefined` | Optional rationale for the chart, displayed below the description |
+| `value` | `string \| number \| undefined` | `undefined` | Optional value to display before the rationale |
 | `width` | `string \| number` | `'100%'` | Width of the chart container |
 | `height` | `string \| number` | `'auto'` | Height of the chart container |
 | `class` | `string` | `''` | Additional CSS class for the chart container |
 | `titleClass` | `string` | `'spider-chart-title'` | CSS class for the title element |
 | `descriptionClass` | `string` | `'spider-chart-description'` | CSS class for the description element |
 | `rationaleClass` | `string` | `'spider-chart-rationale'` | CSS class for the rationale element |
+| `valueClass` | `string` | `'spider-chart-value'` | CSS class for the value element |
 | `tooltipClass` | `string` | `'spider-chart-tooltip'` | CSS class for the tooltip element |
 | `min` | `number` | `0` | Minimum value for the chart (can also be set via config) |
 | `max` | `number` | `100` | Maximum value for the chart (can also be set via config) |
@@ -350,22 +352,14 @@ interface SpiderChartProps {
   title?: string;
   description?: string;
   rationale?: string;
+  value?: string | number;
   width?: string | number;
   height?: string | number;
   class?: string;
   titleClass?: string;
   descriptionClass?: string;
   rationaleClass?: string;
+  valueClass?: string;
   tooltipClass?: string;
 }
 ```
-
-## License
-
-MIT 
-
-This example customizes:
-- The title with a larger, uppercase, colored font
-- The description with a normal font style and darker color
-- The rationale with a dashed border and italic style
-- The tooltip with a light gray background and the same accent color as the title 

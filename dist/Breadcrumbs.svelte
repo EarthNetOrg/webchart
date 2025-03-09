@@ -36,9 +36,9 @@
     >
       {title}
     </button>
+    <span class="separator">›</span>
 
     {#each path.slice(0, path.length - 1) as item, index}
-      <span class="separator">›</span>
       <button
         class={breadcrumbItemClass}
         onclick={() => handleNavigate(index)}
@@ -46,6 +46,7 @@
       >
         {item.axis}
       </button>
+      <span class="separator">›</span>
     {/each}
   </div>
 {/if}
@@ -77,7 +78,7 @@
   }
 
   .separator {
-    margin: 0 4px;
+    margin: 0 2px;
     opacity: 0.5;
   }
 </style>
