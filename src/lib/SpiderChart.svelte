@@ -112,86 +112,165 @@
 
   // Initialize the chart
   function initializeChart() {
-    if (!chartElement) return;
+    try {
+      if (!chartElement) {
+        console.error("Cannot initialize chart: chartElement is null");
+        return;
+      }
 
-    // Clear any existing SVG
-    d3.select(chartElement).selectAll("svg").remove();
+      // Ensure we have valid dimensions
+      if (containerWidth <= 0 || containerHeight <= 0) {
+        console.error(
+          "Invalid container dimensions:",
+          containerWidth,
+          containerHeight
+        );
+        containerWidth = containerWidth <= 0 ? 400 : containerWidth;
+        containerHeight = containerHeight <= 0 ? 300 : containerHeight;
+      }
 
-    // Create SVG element
-    svg = d3
-      .select(chartElement)
-      .append("svg")
-      .attr("width", "100%")
-      .attr("height", "100%")
-      .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`)
-      .attr("preserveAspectRatio", "xMidYMid meet");
+      // Clear any existing SVG
+      try {
+        d3.select(chartElement).selectAll("svg").remove();
+      } catch (e) {
+        console.error("Error clearing existing SVG:", e);
+      }
 
-    // Add shadow filter definition
-    const defs = svg.append("defs");
+      // Create SVG element
+      try {
+        svg = d3
+          .select(chartElement)
+          .append("svg")
+          .attr("width", "100%")
+          .attr("height", "100%")
+          .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`)
+          .attr("preserveAspectRatio", "xMidYMid meet");
 
-    defs
-      .append("filter")
-      .attr("id", "drop-shadow")
-      .attr("height", "130%")
-      .append("feDropShadow")
-      .attr("dx", 0)
-      .attr("dy", 1)
-      .attr("stdDeviation", 2)
-      .attr("flood-color", "rgba(0,0,0,0.3)");
+        // Add shadow filter definition
+        const defs = svg.append("defs");
 
-    // Create chart group with translation to center
-    chartGroup = svg.append("g");
+        defs
+          .append("filter")
+          .attr("id", "drop-shadow")
+          .attr("height", "130%")
+          .append("feDropShadow")
+          .attr("dx", 0)
+          .attr("dy", 1)
+          .attr("stdDeviation", 2)
+          .attr("flood-color", "rgba(0,0,0,0.3)");
 
-    // Initial render
-    updateChart();
+        // Create chart group with translation to center
+        chartGroup = svg.append("g");
+      } catch (e) {
+        console.error("Error creating SVG element:", e);
+        return;
+      }
+
+      // Initial render
+      try {
+        updateChart();
+      } catch (e) {
+        console.error("Error in initial updateChart call:", e);
+      }
+    } catch (error) {
+      console.error("Error in initializeChart:", error);
+    }
   }
 
   // Update the chart when data or dimensions change
   function updateChart() {
-    if (
-      !chartElement ||
-      !svg ||
-      !chartGroup ||
-      containerWidth === 0 ||
-      containerHeight === 0
-    ) {
-      console.error("Cannot update chart: missing elements or dimensions");
-      return;
-    }
+    try {
+      if (
+        !chartElement ||
+        !svg ||
+        !chartGroup ||
+        containerWidth === 0 ||
+        containerHeight === 0
+      ) {
+        console.error("Cannot update chart: missing elements or dimensions");
+        return;
+      }
 
-    const { margin } = mergedConfig;
-    const dimensions = calculateChartDimensions(
-      containerWidth,
-      containerHeight,
-      margin || { top: 50, right: 50, bottom: 50, left: 50 }
-    );
+      // Ensure we have valid dimensions to prevent errors
+      if (
+        isNaN(containerWidth) ||
+        isNaN(containerHeight) ||
+        containerWidth < 0 ||
+        containerHeight < 0 ||
+        containerWidth > 10000 ||
+        containerHeight > 10000
+      ) {
+        console.error(
+          "Invalid container dimensions:",
+          containerWidth,
+          containerHeight
+        );
+        return;
+      }
 
-    // Update chart group position
-    chartGroup.attr(
-      "transform",
-      `translate(${(margin || { left: 50 }).left + dimensions.centerX}, ${(margin || { top: 50 }).top + dimensions.centerY})`
-    );
+      const { margin } = mergedConfig;
+      const dimensions = calculateChartDimensions(
+        containerWidth,
+        containerHeight,
+        margin || { top: 50, right: 50, bottom: 50, left: 50 }
+      );
 
-    // Get all unique axes from all series
-    const allAxes = new Set<string>();
-    currentSeries.forEach((series) => {
-      series.data.forEach((point) => {
-        allAxes.add(point.axis);
+      // Validate dimensions to prevent errors
+      if (dimensions.radius <= 0 || isNaN(dimensions.radius)) {
+        console.error("Invalid radius:", dimensions.radius);
+        return;
+      }
+
+      // Force a reflow to ensure the container has the correct dimensions
+      chartElement.getBoundingClientRect();
+
+      // Update chart group position
+      chartGroup.attr(
+        "transform",
+        `translate(${(margin || { left: 50 }).left + dimensions.centerX}, ${(margin || { top: 50 }).top + dimensions.centerY})`
+      );
+
+      // Get all unique axes from all series
+      const allAxes = new Set<string>();
+      currentSeries.forEach((series) => {
+        if (series && series.data && Array.isArray(series.data)) {
+          series.data.forEach((point) => {
+            if (point && point.axis) {
+              allAxes.add(point.axis);
+            }
+          });
+        }
       });
-    });
 
-    const axesArray = Array.from(allAxes);
+      const axesArray = Array.from(allAxes);
 
-    const angleSlice = (Math.PI * 2) / axesArray.length;
+      // Ensure we have at least one axis
+      if (axesArray.length === 0) {
+        console.warn("No axes found in data");
+        return;
+      }
 
-    // Draw the circular grid
-    drawCircularGrid(dimensions.radius, axesArray, angleSlice);
+      const angleSlice = (Math.PI * 2) / axesArray.length;
 
-    // Draw the axes
-    drawAxes(dimensions.radius, axesArray, angleSlice);
+      // Draw the circular grid
+      drawCircularGrid(dimensions.radius, axesArray, angleSlice);
 
-    // Draw the data series
-    drawDataSeries(dimensions.radius, axesArray, angleSlice);
+      // Draw the axes
+      drawAxes(dimensions.radius, axesArray, angleSlice);
+
+      // Draw the data series
+      drawDataSeries(dimensions.radius, axesArray, angleSlice);
+    } catch (error) {
+      console.error("Error updating chart:", error);
+      // Try to recover by clearing and reinitializing
+      try {
+        if (chartElement) {
+          d3.select(chartElement).selectAll("*").remove();
+        }
+      } catch (e) {
+        console.error("Error during recovery:", e);
+      }
+    }
   }
 
   // Draw the circular grid
@@ -242,464 +321,570 @@
 
   // Draw the axes
   function drawAxes(radius: number, axes: string[], angleSlice: number) {
-    // Remove existing axes
-    chartGroup.selectAll(".axis-line").remove();
-    chartGroup.selectAll(".axis-label").remove();
-    chartGroup.selectAll(".axis-label-box").remove();
-    chartGroup.selectAll(".axis-label-text").remove();
+    try {
+      // Remove existing axes
+      chartGroup.selectAll(".axis-line").remove();
+      chartGroup.selectAll(".axis-label").remove();
+      chartGroup.selectAll(".axis-label-box").remove();
+      chartGroup.selectAll(".axis-label-text").remove();
 
-    // Draw axis lines
-    if (mergedConfig.showAxisLines) {
-      chartGroup
-        .selectAll(".axis-line")
-        .data(axes)
-        .join("line")
-        .attr("class", "axis-line")
-        .attr("x1", 0)
-        .attr("y1", 0)
-        .attr(
-          "x2",
-          (_: any, i: number) => radius * Math.cos(angleSlice * i - Math.PI / 2)
-        )
-        .attr(
-          "y2",
-          (_: any, i: number) => radius * Math.sin(angleSlice * i - Math.PI / 2)
-        )
-        .attr("stroke", "#ddd")
-        .attr("stroke-width", 1);
-    }
+      // Draw axis lines
+      if (mergedConfig.showAxisLines) {
+        try {
+          chartGroup
+            .selectAll(".axis-line")
+            .data(axes)
+            .join("line")
+            .attr("class", "axis-line")
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr(
+              "x2",
+              (_: any, i: number) =>
+                radius * Math.cos(angleSlice * i - Math.PI / 2)
+            )
+            .attr(
+              "y2",
+              (_: any, i: number) =>
+                radius * Math.sin(angleSlice * i - Math.PI / 2)
+            )
+            .attr("stroke", "#ddd")
+            .attr("stroke-width", 1);
+        } catch (e) {
+          console.error("Error drawing axis lines:", e);
+        }
+      }
 
-    // Draw axis labels with boxes
-    if (mergedConfig.showAxisLabels) {
-      // Find if the axis has children in any series
-      const axesWithChildren = new Map<string, boolean>();
-      currentSeries.forEach((series) => {
-        series.data.forEach((point) => {
-          if (point.children && point.children.length > 0) {
-            axesWithChildren.set(point.axis, true);
+      // Draw axis labels with boxes
+      if (mergedConfig.showAxisLabels) {
+        try {
+          // Find if the axis has children in any series
+          const axesWithChildren = new Map<string, boolean>();
+          currentSeries.forEach((series) => {
+            if (series && series.data && Array.isArray(series.data)) {
+              series.data.forEach((point) => {
+                if (point && point.children && point.children.length > 0) {
+                  axesWithChildren.set(point.axis, true);
+                }
+              });
+            }
+          });
+
+          // Create a group for each axis label
+          const labelGroups = chartGroup
+            .selectAll(".axis-label")
+            .data(axes)
+            .join("g")
+            .attr("class", "axis-label")
+            .attr("transform", (_: any, i: number) => {
+              const x = (radius + 5) * Math.cos(angleSlice * i - Math.PI / 2);
+              const y = (radius + 5) * Math.sin(angleSlice * i - Math.PI / 2);
+              return `translate(${x}, ${y})`;
+            });
+
+          // Add background boxes - these will be our clickable elements
+          labelGroups
+            .append("rect")
+            .attr("class", "axis-label-box")
+            .attr("x", (d: string) => -Math.max(d.length * 3.5, 15) - 25)
+            .attr("y", -10 - 25)
+            .attr("rx", 3)
+            .attr("ry", 3)
+            .attr("width", (d: string) => Math.max(d.length * 7, 30) + 50)
+            .attr("height", 20 + 50)
+            .attr("fill", "rgba(0,0,0,0)") // Completely transparent
+            .attr("stroke", "none") // No border
+            .attr("stroke-width", 0)
+            // Make the background boxes capture pointer events
+            .style("pointer-events", "all")
+            .style("cursor", (d: string) =>
+              axesWithChildren.has(d) ? "pointer" : "default"
+            );
+
+          // Add a second, visually smaller box on top to maintain the visual appearance
+          labelGroups
+            .append("rect")
+            .attr("class", "axis-label-visual-box")
+            .attr("x", (d: string) => -Math.max(d.length * 3.5, 15) - 4)
+            .attr("y", -10 - 4)
+            .attr("rx", 3)
+            .attr("ry", 3)
+            .attr("width", (d: string) => Math.max(d.length * 7, 30) + 8)
+            .attr("height", 20 + 8)
+            .attr("fill", (d: string) =>
+              axesWithChildren.has(d) ? "#f8f9fa" : "#ffffff"
+            )
+            .attr("stroke", (d: string) =>
+              axesWithChildren.has(d) ? "#333333" : "#999999"
+            )
+            .attr("stroke-width", (d: string) =>
+              axesWithChildren.has(d) ? 1.5 : 1
+            )
+            .attr("filter", (d: string) =>
+              axesWithChildren.has(d) ? "url(#drop-shadow)" : "none"
+            )
+            .style("pointer-events", "none"); // This visual box doesn't capture events
+
+          // Add text
+          labelGroups
+            .append("text")
+            .attr("class", "axis-label-text")
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "middle")
+            .attr("font-size", "12px")
+            .attr("fill", (d: string) =>
+              axesWithChildren.has(d) ? "#333333" : "#666666"
+            )
+            .attr("font-weight", (d: string) =>
+              axesWithChildren.has(d) ? "bold" : "normal"
+            )
+            .text((d: string) => d)
+            // Make sure text doesn't capture pointer events
+            .style("pointer-events", "none");
+
+          // Add click handlers to the background boxes
+          try {
+            labelGroups
+              .filter((d: string) => axesWithChildren.has(d))
+              .select(".axis-label-box") // Select the background box
+              .on("click", function (event: MouseEvent, d: string) {
+                try {
+                  event.stopPropagation();
+
+                  // Find the data point with this axis name
+                  let dataPoint = null;
+                  let foundDataPoint = false;
+
+                  for (const series of currentSeries) {
+                    if (!series || !series.data) continue;
+
+                    dataPoint = series.data.find((p) => p && p.axis === d);
+
+                    if (dataPoint) {
+                      foundDataPoint = true;
+
+                      if (dataPoint.children && dataPoint.children.length > 0) {
+                        // Call custom onClick handler if it exists
+                        if (typeof dataPoint.onClick === "function") {
+                          try {
+                            const result = dataPoint.onClick();
+                            if (result === false) {
+                              return; // Skip navigation if handler returns false
+                            }
+                          } catch (e) {
+                            console.error("Error in onClick handler:", e);
+                          }
+                        }
+
+                        navigateToChildren(dataPoint);
+                        break;
+                      }
+                    }
+                  }
+
+                  if (!foundDataPoint) {
+                    console.log("No data point found with axis:", d);
+                  }
+                } catch (e) {
+                  console.error("Error in click handler:", e);
+                }
+              });
+          } catch (e) {
+            console.error("Error setting up click handlers:", e);
           }
-        });
-      });
 
-      // Create a group for each axis label
-      const labelGroups = chartGroup
-        .selectAll(".axis-label")
-        .data(axes)
-        .join("g")
-        .attr("class", "axis-label")
-        .attr("transform", (_: any, i: number) => {
-          const x = (radius + 5) * Math.cos(angleSlice * i - Math.PI / 2);
-          const y = (radius + 5) * Math.sin(angleSlice * i - Math.PI / 2);
-          return `translate(${x}, ${y})`;
-        });
+          // Apply hover effects to all label groups
+          try {
+            labelGroups.each(function (this: any, d: string) {
+              try {
+                const element = this as unknown as SVGGElement;
+                const group = d3.select(element);
+                const hasChildren = axesWithChildren.has(d);
 
-      // Add background boxes - these will be our clickable elements
-      labelGroups
-        .append("rect")
-        .attr("class", "axis-label-box")
-        .attr("x", (d: string) => -Math.max(d.length * 3.5, 15) - 25)
-        .attr("y", -10 - 25)
-        .attr("rx", 3)
-        .attr("ry", 3)
-        .attr("width", (d: string) => Math.max(d.length * 7, 30) + 50)
-        .attr("height", 20 + 50)
-        .attr("fill", "rgba(0,0,0,0)") // Completely transparent
-        .attr("stroke", "none") // No border
-        .attr("stroke-width", 0)
-        // Make the background boxes capture pointer events
-        .style("pointer-events", "all")
-        .style("cursor", (d: string) =>
-          axesWithChildren.has(d) ? "pointer" : "default"
-        );
+                // Find the data point and series for this axis
+                let axisDataPoint: SpiderDataPoint | null = null;
+                let axisSeries: SpiderChartSeries | null = null;
 
-      // Add a second, visually smaller box on top to maintain the visual appearance
-      labelGroups
-        .append("rect")
-        .attr("class", "axis-label-visual-box")
-        .attr("x", (d: string) => -Math.max(d.length * 3.5, 15) - 4)
-        .attr("y", -10 - 4)
-        .attr("rx", 3)
-        .attr("ry", 3)
-        .attr("width", (d: string) => Math.max(d.length * 7, 30) + 8)
-        .attr("height", 20 + 8)
-        .attr("fill", (d: string) =>
-          axesWithChildren.has(d) ? "#f8f9fa" : "#ffffff"
-        )
-        .attr("stroke", (d: string) =>
-          axesWithChildren.has(d) ? "#333333" : "#999999"
-        )
-        .attr("stroke-width", (d: string) =>
-          axesWithChildren.has(d) ? 1.5 : 1
-        )
-        .attr("filter", (d: string) =>
-          axesWithChildren.has(d) ? "url(#drop-shadow)" : "none"
-        )
-        .style("pointer-events", "none"); // This visual box doesn't capture events
+                for (const [_, series] of currentSeries.entries()) {
+                  if (!series || !series.data) continue;
 
-      // Add text
-      labelGroups
-        .append("text")
-        .attr("class", "axis-label-text")
-        .attr("text-anchor", "middle")
-        .attr("dominant-baseline", "middle")
-        .attr("font-size", "12px")
-        .attr("fill", (d: string) =>
-          axesWithChildren.has(d) ? "#333333" : "#666666"
-        )
-        .attr("font-weight", (d: string) =>
-          axesWithChildren.has(d) ? "bold" : "normal"
-        )
-        .text((d: string) => d)
-        // Make sure text doesn't capture pointer events
-        .style("pointer-events", "none");
-
-      // Add click handlers to the background boxes
-      labelGroups
-        .filter((d: string) => axesWithChildren.has(d))
-        .select(".axis-label-box") // Select the background box
-        .on("click", function (event: MouseEvent, d: string) {
-          event.stopPropagation();
-
-          // Find the data point with this axis name
-          let dataPoint = null;
-          let foundDataPoint = false;
-
-          for (const series of currentSeries) {
-            dataPoint = series.data.find((p) => p.axis === d);
-
-            if (dataPoint) {
-              foundDataPoint = true;
-
-              if (dataPoint.children && dataPoint.children.length > 0) {
-                // Call custom onClick handler if it exists
-                if (typeof dataPoint.onClick === "function") {
-                  const result = dataPoint.onClick();
-                  if (result === false) {
-                    return; // Skip navigation if handler returns false
+                  const dataPoint = series.data.find((p) => p && p.axis === d);
+                  if (dataPoint) {
+                    axisDataPoint = dataPoint;
+                    axisSeries = series;
+                    break;
                   }
                 }
 
-                navigateToChildren(dataPoint);
-                break;
+                // Add hover effects and tooltip for all labels
+                // Apply the hover handler to the background box
+                group
+                  .select(".axis-label-box")
+                  .on("mouseenter", function (this: any) {
+                    try {
+                      const el = element; // Use the parent element for visual effects
+
+                      // Get the position of the label for tooltip positioning
+                      const transform = el.getAttribute("transform");
+                      let labelX = 0;
+                      let labelY = 0;
+
+                      if (transform) {
+                        const match = transform.match(
+                          /translate\(([^,]+),\s*([^)]+)\)/
+                        );
+                        if (match && match[1] && match[2]) {
+                          labelX = parseFloat(match[1]);
+                          labelY = parseFloat(match[2]);
+                        }
+                      }
+
+                      // Show tooltip if we have data for this axis
+                      if (axisDataPoint && axisSeries) {
+                        tooltipVisible = true;
+                        tooltipX = labelX;
+                        tooltipY = labelY;
+                        tooltipDataPoint = axisDataPoint;
+                        tooltipSeries = axisSeries;
+                      }
+
+                      // Visual feedback - different for clickable vs non-clickable
+                      if (hasChildren) {
+                        d3.select(el)
+                          .select(".axis-label-box")
+                          .transition()
+                          .duration(200);
+
+                        d3.select(el)
+                          .select(".axis-label-text")
+                          .transition()
+                          .duration(200)
+                          .attr("fill", "#0d47a1");
+                      } else {
+                        d3.select(el)
+                          .select(".axis-label-box")
+                          .transition()
+                          .duration(200);
+
+                        d3.select(el)
+                          .select(".axis-label-text")
+                          .transition()
+                          .duration(200)
+                          .attr("fill", "#555555");
+                      }
+                    } catch (e) {
+                      console.error("Error in mouseenter handler:", e);
+                    }
+                  });
+
+                group
+                  .select(".axis-label-box")
+                  .on("mouseleave", function (this: any) {
+                    try {
+                      const el = element; // Use the parent element for visual effects
+
+                      // Hide tooltip
+                      tooltipVisible = false;
+
+                      // Reset visual appearance
+                      if (hasChildren) {
+                        d3.select(el)
+                          .select(".axis-label-box")
+                          .transition()
+                          .duration(200);
+
+                        d3.select(el)
+                          .select(".axis-label-text")
+                          .transition()
+                          .duration(200)
+                          .attr("fill", "#333333");
+                      } else {
+                        d3.select(el)
+                          .select(".axis-label-box")
+                          .transition()
+                          .duration(200);
+
+                        d3.select(el)
+                          .select(".axis-label-text")
+                          .transition()
+                          .duration(200)
+                          .attr("fill", "#666666");
+                      }
+                    } catch (e) {
+                      console.error("Error in mouseleave handler:", e);
+                    }
+                  });
+              } catch (e) {
+                console.error("Error setting up hover effects for label:", e);
               }
-            }
+            });
+          } catch (e) {
+            console.error("Error setting up hover effects:", e);
           }
-
-          if (!foundDataPoint) {
-            console.log("No data point found with axis:", d);
-          }
-        });
-
-      // Apply hover effects to all label groups
-      labelGroups.each(function (this: any, d: string) {
-        const element = this as unknown as SVGGElement;
-        const group = d3.select(element);
-        const hasChildren = axesWithChildren.has(d);
-
-        // Find the data point and series for this axis
-        let axisDataPoint: SpiderDataPoint | null = null;
-        let axisSeries: SpiderChartSeries | null = null;
-
-        for (const [_, series] of currentSeries.entries()) {
-          const dataPoint = series.data.find((p) => p.axis === d);
-          if (dataPoint) {
-            axisDataPoint = dataPoint;
-            axisSeries = series;
-            break;
-          }
+        } catch (e) {
+          console.error("Error drawing axis labels:", e);
         }
-
-        // Add hover effects and tooltip for all labels
-        // Apply the hover handler to the background box
-        group.select(".axis-label-box").on("mouseenter", function (this: any) {
-          const el = element; // Use the parent element for visual effects
-
-          // Get the position of the label for tooltip positioning
-          const transform = el.getAttribute("transform");
-          let labelX = 0;
-          let labelY = 0;
-
-          if (transform) {
-            const match = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
-            if (match && match[1] && match[2]) {
-              labelX = parseFloat(match[1]);
-              labelY = parseFloat(match[2]);
-            }
-          }
-
-          // Show tooltip if we have data for this axis
-          if (axisDataPoint && axisSeries) {
-            tooltipVisible = true;
-            tooltipX = labelX;
-            tooltipY = labelY;
-            tooltipDataPoint = axisDataPoint;
-            tooltipSeries = axisSeries;
-          }
-
-          // Visual feedback - different for clickable vs non-clickable
-          if (hasChildren) {
-            d3.select(el)
-              .select(".axis-label-box")
-              .transition()
-              .duration(200)
-              .attr("fill", "#e3f2fd");
-
-            d3.select(el)
-              .select(".axis-label-text")
-              .transition()
-              .duration(200)
-              .attr("fill", "#0d47a1");
-          } else {
-            d3.select(el)
-              .select(".axis-label-box")
-              .transition()
-              .duration(200)
-              .attr("fill", "#f5f5f5");
-
-            d3.select(el)
-              .select(".axis-label-text")
-              .transition()
-              .duration(200)
-              .attr("fill", "#555555");
-          }
-        });
-
-        group.select(".axis-label-box").on("mouseleave", function (this: any) {
-          const el = element; // Use the parent element for visual effects
-
-          // Hide tooltip
-          tooltipVisible = false;
-
-          // Reset visual appearance
-          if (hasChildren) {
-            d3.select(el)
-              .select(".axis-label-box")
-              .transition()
-              .duration(200)
-              .attr("fill", "#f8f9fa");
-
-            d3.select(el)
-              .select(".axis-label-text")
-              .transition()
-              .duration(200)
-              .attr("fill", "#333333");
-          } else {
-            d3.select(el)
-              .select(".axis-label-box")
-              .transition()
-              .duration(200)
-              .attr("fill", "#eeeeee");
-
-            d3.select(el)
-              .select(".axis-label-text")
-              .transition()
-              .duration(200)
-              .attr("fill", "#666666");
-          }
-        });
-      });
+      }
+    } catch (error) {
+      console.error("Error in drawAxes:", error);
     }
   }
 
   // Draw the data series
   function drawDataSeries(radius: number, axes: string[], angleSlice: number) {
-    const { min, max, animationDuration } = mergedConfig;
+    try {
+      const { min, max, animationDuration } = mergedConfig;
 
-    // Remove existing paths
-    chartGroup.selectAll(".radar-area").remove();
-    chartGroup.selectAll(".radar-stroke").remove();
-    chartGroup.selectAll(".radar-point").remove();
+      // Remove existing paths
+      chartGroup.selectAll(".radar-area").remove();
+      chartGroup.selectAll(".radar-stroke").remove();
+      chartGroup.selectAll(".radar-point").remove();
 
-    // Generate color scale
-    const colorScale = generateColorScale(currentSeries);
+      // Generate color scale
+      const colorScale = generateColorScale(currentSeries);
 
-    // Store all data points for tooltip interaction
-    const allPoints: {
-      x: number;
-      y: number;
-      dataPoint: SpiderDataPoint;
-      seriesIndex: number;
-    }[] = [];
+      // Store all data points for tooltip interaction
+      const allPoints: {
+        x: number;
+        y: number;
+        dataPoint: SpiderDataPoint;
+        seriesIndex: number;
+      }[] = [];
 
-    // Process each series
-    currentSeries.forEach((series, seriesIndex) => {
-      // Map axes to data points, using 0 for missing values
-      const seriesData = axes.map((axis) => {
-        const point = series.data.find((d) => d.axis === axis);
-        return point || { axis, value: 0 };
-      });
+      // Process each series
+      currentSeries.forEach((series, seriesIndex) => {
+        if (!series || !series.data || !Array.isArray(series.data)) {
+          console.warn("Invalid series data:", series);
+          return;
+        }
 
-      // Create radar line and area generators
-      const radarLine = createRadarLineGenerator(
-        radius,
-        angleSlice,
-        min || 0,
-        max || 100
-      );
-      const radarArea = createRadarAreaGenerator(
-        radius,
-        angleSlice,
-        min || 0,
-        max || 100
-      );
-
-      // Get color and opacity for this series
-      const color = series.color || colorScale(seriesIndex);
-      const opacity = series.opacity || mergedConfig.opacity || 0.5;
-
-      // Draw radar area
-      chartGroup
-        .append("path")
-        .datum(seriesData)
-        .attr("class", "radar-area")
-        .attr("d", radarArea as any)
-        .attr("fill", color)
-        .attr("fill-opacity", 0)
-        .transition()
-        .duration(animationDuration || 500)
-        .attr("fill-opacity", opacity);
-
-      // Draw radar stroke
-      chartGroup
-        .append("path")
-        .datum(seriesData)
-        .attr("class", "radar-stroke")
-        .attr("d", radarLine as any)
-        .attr("stroke", color)
-        .attr("stroke-width", mergedConfig.strokeWidth || 2)
-        .attr("fill", "none")
-        .attr("stroke-opacity", 0)
-        .transition()
-        .duration(animationDuration || 500)
-        .attr("stroke-opacity", 1);
-
-      // Draw data points
-      seriesData.forEach((point, i) => {
-        // Calculate point position
-        const normalizedValue = Math.max(
-          0,
-          Math.min(1, (point.value - (min || 0)) / ((max || 100) - (min || 0)))
-        );
-        const pointRadius = radius * normalizedValue;
-        const x = pointRadius * Math.cos(angleSlice * i - Math.PI / 2);
-        const y = pointRadius * Math.sin(angleSlice * i - Math.PI / 2);
-
-        // Store point data for tooltip
-        allPoints.push({ x, y, dataPoint: point, seriesIndex });
-
-        // Draw point
-        chartGroup
-          .append("circle")
-          .attr("class", "radar-point")
-          .attr("cx", x)
-          .attr("cy", y)
-          .attr("r", 4)
-          .attr("fill", color)
-          .attr("stroke", "#fff")
-          .attr("stroke-width", 1)
-          .attr("opacity", 0)
-          .transition()
-          .duration(animationDuration || 500)
-          .attr("opacity", 1);
-      });
-    });
-
-    // Add interaction if enabled
-    if (mergedConfig.interactive) {
-      // Add invisible overlay for mouse interaction
-      const overlay = chartGroup.selectAll(".interaction-overlay").data([null]);
-
-      overlay
-        .enter()
-        .append("circle")
-        .attr("class", "interaction-overlay")
-        .merge(overlay as any)
-        .attr("r", radius + 20)
-        .attr("fill", "transparent")
-        .attr("pointer-events", "all")
-        .on("mousemove", (event: MouseEvent) => {
-          const [mouseX, mouseY] = d3.pointer(event);
-          const closest = findClosestDataPoint(
-            mouseX,
-            mouseY,
-            currentSeries,
-            allPoints
-          );
-
-          if (closest) {
-            // Find the original point data with coordinates
-            const closestPoint = allPoints.find(
-              (p) => p.dataPoint === closest.dataPoint
-            );
-
-            if (closestPoint) {
-              tooltipVisible = true;
-              tooltipX = closestPoint.x;
-              tooltipY = closestPoint.y;
-              tooltipDataPoint = closest.dataPoint;
-              tooltipSeries = closest.series || null;
-            } else {
-              tooltipVisible = false;
-            }
-          } else {
-            tooltipVisible = false;
-          }
-        })
-        .on("mouseleave", () => {
-          tooltipVisible = false;
-        })
-        .on("click", () => {
-          if (
-            !tooltipVisible ||
-            !tooltipDataPoint ||
-            !tooltipDataPoint.children
-          )
-            return;
-
-          // Handle drill-down
-          navigateToChildren(tooltipDataPoint);
+        // Map axes to data points, using 0 for missing values
+        const seriesData = axes.map((axis) => {
+          const point = series.data.find((d) => d && d.axis === axis);
+          return point || { axis, value: 0 };
         });
+
+        // Create radar line and area generators
+        const radarLine = createRadarLineGenerator(
+          radius,
+          angleSlice,
+          min || 0,
+          max || 100
+        );
+        const radarArea = createRadarAreaGenerator(
+          radius,
+          angleSlice,
+          min || 0,
+          max || 100
+        );
+
+        // Get color and opacity for this series
+        const color = series.color || colorScale(seriesIndex);
+        const opacity = series.opacity || mergedConfig.opacity || 0.5;
+
+        // Draw radar area
+        try {
+          chartGroup
+            .append("path")
+            .datum(seriesData)
+            .attr("class", "radar-area")
+            .attr("d", radarArea as any)
+            .attr("fill", color)
+            .attr("fill-opacity", 0)
+            .transition()
+            .duration(animationDuration || 500)
+            .attr("fill-opacity", opacity);
+        } catch (e) {
+          console.error("Error drawing radar area:", e);
+        }
+
+        // Draw radar stroke
+        try {
+          chartGroup
+            .append("path")
+            .datum(seriesData)
+            .attr("class", "radar-stroke")
+            .attr("d", radarLine as any)
+            .attr("stroke", color)
+            .attr("stroke-width", mergedConfig.strokeWidth || 2)
+            .attr("fill", "none")
+            .attr("stroke-opacity", 0)
+            .transition()
+            .duration(animationDuration || 500)
+            .attr("stroke-opacity", 1);
+        } catch (e) {
+          console.error("Error drawing radar stroke:", e);
+        }
+
+        // Draw data points
+        seriesData.forEach((point, i) => {
+          try {
+            // Calculate point position
+            const normalizedValue = Math.max(
+              0,
+              Math.min(
+                1,
+                (point.value - (min || 0)) / ((max || 100) - (min || 0))
+              )
+            );
+            const pointRadius = radius * normalizedValue;
+            const x = pointRadius * Math.cos(angleSlice * i - Math.PI / 2);
+            const y = pointRadius * Math.sin(angleSlice * i - Math.PI / 2);
+
+            // Store point data for tooltip
+            allPoints.push({ x, y, dataPoint: point, seriesIndex });
+
+            // Draw point
+            chartGroup
+              .append("circle")
+              .attr("class", "radar-point")
+              .attr("cx", x)
+              .attr("cy", y)
+              .attr("r", 4)
+              .attr("fill", color)
+              .attr("stroke", "#fff")
+              .attr("stroke-width", 1)
+              .attr("opacity", 0)
+              .transition()
+              .duration(animationDuration || 500)
+              .attr("opacity", 1);
+          } catch (e) {
+            console.error("Error drawing data point:", e);
+          }
+        });
+      });
+
+      // Add interaction if enabled
+      if (mergedConfig.interactive) {
+        try {
+          // Add invisible overlay for mouse interaction
+          const overlay = chartGroup
+            .selectAll(".interaction-overlay")
+            .data([null]);
+
+          overlay
+            .enter()
+            .append("circle")
+            .attr("class", "interaction-overlay")
+            .merge(overlay as any)
+            .attr("r", radius + 20)
+            .attr("fill", "transparent")
+            .attr("pointer-events", "all")
+            .on("mousemove", (event: MouseEvent) => {
+              try {
+                const [mouseX, mouseY] = d3.pointer(event);
+                const closest = findClosestDataPoint(
+                  mouseX,
+                  mouseY,
+                  currentSeries,
+                  allPoints
+                );
+
+                if (closest) {
+                  // Find the original point data with coordinates
+                  const closestPoint = allPoints.find(
+                    (p) => p.dataPoint === closest.dataPoint
+                  );
+
+                  if (closestPoint) {
+                    tooltipVisible = true;
+                    tooltipX = closestPoint.x;
+                    tooltipY = closestPoint.y;
+                    tooltipDataPoint = closest.dataPoint;
+                    tooltipSeries = closest.series || null;
+                  } else {
+                    tooltipVisible = false;
+                  }
+                } else {
+                  tooltipVisible = false;
+                }
+              } catch (e) {
+                console.error("Error in mousemove handler:", e);
+                tooltipVisible = false;
+              }
+            })
+            .on("mouseleave", () => {
+              tooltipVisible = false;
+            })
+            .on("click", () => {
+              try {
+                if (
+                  !tooltipVisible ||
+                  !tooltipDataPoint ||
+                  !tooltipDataPoint.children
+                )
+                  return;
+
+                // Handle drill-down
+                navigateToChildren(tooltipDataPoint);
+              } catch (e) {
+                console.error("Error in click handler:", e);
+              }
+            });
+        } catch (e) {
+          console.error("Error setting up interaction overlay:", e);
+        }
+      }
+    } catch (error) {
+      console.error("Error in drawDataSeries:", error);
     }
   }
 
   // Navigate to children of a data point
   export function navigateToChildren(dataPoint: SpiderDataPoint) {
-    if (!dataPoint) {
-      console.error("Cannot navigate: dataPoint is null or undefined");
-      return;
+    try {
+      if (!dataPoint) {
+        console.error("Cannot navigate: dataPoint is null or undefined");
+        return;
+      }
+
+      if (!dataPoint.children || dataPoint.children.length === 0) {
+        console.log("No children to navigate to for:", dataPoint.axis);
+        return;
+      }
+
+      // Save current state in history (limit history size to prevent memory issues)
+      if (navigationHistory.length > 20) {
+        navigationHistory = navigationHistory.slice(-20);
+      }
+      navigationHistory.push(JSON.parse(JSON.stringify(currentSeries)));
+
+      // Create a deep copy of the data point to ensure we preserve all properties
+      const dataPointCopy = JSON.parse(JSON.stringify(dataPoint));
+
+      // Update navigation path with the complete data point (limit path size to prevent memory issues)
+      if (navigationPath.length > 10) {
+        navigationPath = navigationPath.slice(-10);
+      }
+      navigationPath = [...navigationPath, dataPointCopy];
+
+      // Create new series from children
+      const newSeries = {
+        name: dataPoint.axis,
+        data: JSON.parse(JSON.stringify(dataPoint.children)),
+      };
+
+      // Ensure the children data is valid
+      if (!newSeries.data || newSeries.data.length === 0) {
+        console.error("Children data is empty or invalid");
+        return;
+      }
+
+      // Update current series
+      currentSeries = [newSeries];
+
+      // Update chart immediately
+      setTimeout(() => {
+        updateChart();
+      }, 0);
+    } catch (error) {
+      console.error("Error in navigateToChildren:", error);
+      // Recover from error by resetting to top level
+      navigationPath = [];
+      navigationHistory = [];
+      currentSeries = JSON.parse(JSON.stringify(normalizedData));
+      updateChart();
     }
-
-    if (!dataPoint.children || dataPoint.children.length === 0) {
-      console.log("No children to navigate to for:", dataPoint.axis);
-      return;
-    }
-
-    // Save current state in history
-    navigationHistory.push(JSON.parse(JSON.stringify(currentSeries)));
-
-    // Create a deep copy of the data point to ensure we preserve all properties
-    const dataPointCopy = JSON.parse(JSON.stringify(dataPoint));
-
-    // Update navigation path with the complete data point
-    navigationPath = [...navigationPath, dataPointCopy];
-
-    // Create new series from children
-    const newSeries = {
-      name: dataPoint.axis,
-      data: JSON.parse(JSON.stringify(dataPoint.children)),
-    };
-
-    // Ensure the children data is valid
-    if (!newSeries.data || newSeries.data.length === 0) {
-      console.error("Children data is empty or invalid");
-      return;
-    }
-
-    // Update current series
-    currentSeries = [newSeries];
-
-    // Update chart immediately
-    updateChart();
   }
 
   // Navigate to a specific level in the path
@@ -899,8 +1084,32 @@
   function handleResize(entries: ResizeObserverEntry[]) {
     for (const entry of entries) {
       const { width, height } = entry.contentRect;
+
+      // Ensure we have a valid height
+      let newHeight = height;
+
+      // If height is 0 or very small, use a default based on width
+      if (newHeight < 100) {
+        // Check if a height prop was provided
+        const heightProp = typeof height === "string" ? height : "";
+        if (heightProp && heightProp !== "auto" && heightProp !== "0") {
+          // Try to use the height prop if it's a valid CSS value
+          chartElement.style.height = heightProp;
+          // Get the new height after applying the style
+          const rect = chartElement.getBoundingClientRect();
+          newHeight = rect.height;
+        } else {
+          // Default to 4:3 aspect ratio if no valid height
+          newHeight = width * 0.75;
+        }
+      }
+
+      // Ensure height doesn't exceed a reasonable maximum to prevent infinite expansion
+      const maxHeight = 2000; // Set a reasonable maximum height
+      newHeight = Math.min(newHeight, maxHeight);
+
       containerWidth = width;
-      containerHeight = height === 0 ? width * 0.75 : height; // Default to 4:3 aspect ratio
+      containerHeight = newHeight;
 
       if (svg) {
         svg.attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`);
@@ -911,22 +1120,75 @@
 
   // Lifecycle hooks
   onMount(() => {
-    // Initialize with current data
-    currentSeries = normalizedData;
+    try {
+      // Initialize with current data
+      currentSeries = normalizedData;
 
-    // Set up resize observer
-    observer = new ResizeObserver(handleResize);
-    observer.observe(chartElement);
-
-    // Initial render after a short delay to ensure container is sized
-    setTimeout(() => {
-      if (containerWidth === 0) {
-        const rect = chartElement.getBoundingClientRect();
-        containerWidth = rect.width;
-        containerHeight = rect.height === 0 ? rect.width * 0.75 : rect.height;
+      // Apply height style if provided as a prop
+      if (height && typeof height === "string" && height !== "auto") {
+        chartElement.style.height = height;
+      } else if (height && typeof height === "number" && height > 0) {
+        chartElement.style.height = `${height}px`;
       }
-      initializeChart();
-    }, 100);
+
+      // Set up resize observer with error handling
+      try {
+        observer = new ResizeObserver((entries) => {
+          try {
+            handleResize(entries);
+          } catch (e) {
+            console.error("Error in resize observer callback:", e);
+          }
+        });
+        observer.observe(chartElement);
+      } catch (e) {
+        console.error("Error setting up resize observer:", e);
+        // Fallback to a fixed size if resize observer fails
+        containerWidth = chartElement.clientWidth || 400;
+        containerHeight = chartElement.clientHeight || 300;
+        initializeChart();
+      }
+
+      // Initial render after a short delay to ensure container is sized
+      setTimeout(() => {
+        try {
+          if (containerWidth === 0) {
+            const rect = chartElement.getBoundingClientRect();
+            containerWidth = rect.width || 400; // Fallback to 400 if width is 0
+
+            // Ensure we have a valid height
+            let newHeight = rect.height;
+
+            // If height is still 0 or very small, use a default based on width
+            if (newHeight < 100) {
+              newHeight = rect.width * 0.75; // Default to 4:3 aspect ratio
+
+              // Apply the calculated height to the element
+              chartElement.style.height = `${newHeight}px`;
+            }
+
+            // Ensure height doesn't exceed a reasonable maximum
+            const maxHeight = 2000;
+            containerHeight = Math.min(newHeight, maxHeight);
+          }
+
+          // Ensure we have valid dimensions
+          if (containerWidth <= 0) containerWidth = 400;
+          if (containerHeight <= 0) containerHeight = 300;
+
+          initializeChart();
+
+          // Add a second update after a short delay to ensure proper positioning of axis labels
+          setTimeout(() => {
+            updateChart();
+          }, 50);
+        } catch (e) {
+          console.error("Error in initial render:", e);
+        }
+      }, 100);
+    } catch (error) {
+      console.error("Error in onMount:", error);
+    }
   });
 
   onDestroy(() => {
@@ -1012,10 +1274,12 @@
 <style>
   .spider-chart-container {
     position: relative;
+    overflow: hidden; /* Prevent content from expanding outside */
   }
 
   .spider-chart {
     min-height: 300px;
+    overflow: hidden; /* Prevent content from expanding outside */
   }
 
   /* Default tooltip class that can be overridden by user */
