@@ -27,7 +27,7 @@
     className = "",
     titleClass = "spider-chart-title",
     descriptionClass = "spider-chart-description",
-    rationaleClass = "spider-chart-rationale",
+    rationaleClass = "",
     valueClass = "spider-chart-value",
     breadcrumbsClass = "",
     breadcrumbItemClass = "breadcrumb-item",
@@ -974,7 +974,7 @@
   {/if}
 
   {#if rationale}
-    <div class="rationale-container">
+    <div class={rationaleClass}>
       {#if value !== undefined}
         <span class={valueClass}>
           {#if navigationPath.length > 0 && navigationPath[navigationPath.length - 1]?.value !== undefined}
@@ -984,7 +984,7 @@
           {/if}
         </span>
       {/if}
-      <div class={rationaleClass}>
+      <div class="spider-chart-rationale">
         {#if navigationPath.length > 0}
           {navigationPath[navigationPath.length - 1]?.rationale || rationale}
         {:else}
@@ -1032,7 +1032,7 @@
     font-style: italic;
   }
 
-  .rationale-container {
+  .spider-chart-rationale-container {
     display: flex;
     align-items: center;
     justify-content: center;
