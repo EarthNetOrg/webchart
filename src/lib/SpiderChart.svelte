@@ -88,11 +88,6 @@
       // If we have a navigation path but empty currentSeries, try to rebuild it
       const lastPathItem = navigationPath[navigationPath.length - 1];
       if (lastPathItem) {
-        console.log(
-          "Rebuilding currentSeries from navigationPath, last item:",
-          lastPathItem.axis
-        );
-
         if (lastPathItem.children && lastPathItem.children.length > 0) {
           currentSeries = [
             {
@@ -361,7 +356,6 @@
         .filter((d: string) => axesWithChildren.has(d))
         .select(".axis-label-box") // Select the background box
         .on("click", function (event: MouseEvent, d: string) {
-          console.log("Box click on axis:", d);
           event.stopPropagation();
 
           // Find the data point with this axis name
@@ -375,18 +369,14 @@
               foundDataPoint = true;
 
               if (dataPoint.children && dataPoint.children.length > 0) {
-                console.log("Children found:", dataPoint.children.length);
-
                 // Call custom onClick handler if it exists
                 if (typeof dataPoint.onClick === "function") {
-                  console.log("Calling custom onClick handler");
                   const result = dataPoint.onClick();
                   if (result === false) {
                     return; // Skip navigation if handler returns false
                   }
                 }
 
-                console.log("Proceeding with navigation to children");
                 navigateToChildren(dataPoint);
                 break;
               }
@@ -672,8 +662,6 @@
 
   // Navigate to children of a data point
   export function navigateToChildren(dataPoint: SpiderDataPoint) {
-    console.log("Navigating to children of:", dataPoint.axis);
-
     if (!dataPoint) {
       console.error("Cannot navigate: dataPoint is null or undefined");
       return;
@@ -687,8 +675,11 @@
     // Save current state in history
     navigationHistory.push(JSON.parse(JSON.stringify(currentSeries)));
 
-    // Update navigation path
-    navigationPath = [...navigationPath, dataPoint];
+    // Create a deep copy of the data point to ensure we preserve all properties
+    const dataPointCopy = JSON.parse(JSON.stringify(dataPoint));
+
+    // Update navigation path with the complete data point
+    navigationPath = [...navigationPath, dataPointCopy];
 
     // Create new series from children
     const newSeries = {
@@ -717,7 +708,10 @@
     }
 
     // Store the new path before making other changes
-    const newPath = navigationPath.slice(0, index + 1);
+    // Make a deep copy to ensure we preserve all properties
+    const newPath = JSON.parse(
+      JSON.stringify(navigationPath.slice(0, index + 1))
+    );
 
     // Restore series from history
     if (index < 0) {
@@ -848,7 +842,10 @@
       }
 
       // Use the original data point if found, otherwise use the path item
-      const dataToUse = originalDataPoint || lastPathItem;
+      // Make sure to preserve all properties from the path item
+      const dataToUse = originalDataPoint
+        ? { ...lastPathItem, ...originalDataPoint }
+        : lastPathItem;
 
       // Ensure we have children data before creating the series
       if (dataToUse.children && dataToUse.children.length > 0) {
@@ -962,17 +959,17 @@
     </div>
   {/if}
 
-  {#if description || navigationPath[navigationPath.length - 1]?.description}
+  {#if description || (navigationPath.length > 0 && navigationPath[navigationPath.length - 1]?.description)}
     <div class={descriptionClass}>
-      {#if navigationPath.length > 0}
-        {navigationPath[navigationPath.length - 1]?.description || description}
+      {#if navigationPath.length > 0 && navigationPath[navigationPath.length - 1]?.description}
+        {navigationPath[navigationPath.length - 1]?.description}
       {:else}
         {description}
       {/if}
     </div>
   {/if}
 
-  {#if rationale || navigationPath[navigationPath.length - 1]?.rationale}
+  {#if rationale || (navigationPath.length > 0 && (navigationPath[navigationPath.length - 1]?.rationale || navigationPath[navigationPath.length - 1]?.value !== undefined))}
     <div class={rationaleClass}>
       {#if navigationPath.length > 0}
         {#if navigationPath[navigationPath.length - 1]?.value !== undefined}
@@ -985,11 +982,13 @@
         {/if}
         {navigationPath[navigationPath.length - 1]?.rationale || rationale}
       {:else}
-        <span class={valueClass}>
-          {typeof value === "number"
-            ? `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })} / ${mergedConfig.max || max}`
-            : value}
-        </span>
+        {#if value !== undefined}
+          <span class={valueClass}>
+            {typeof value === "number"
+              ? `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })} / ${mergedConfig.max || max}`
+              : value}
+          </span>
+        {/if}
         {rationale}
       {/if}
     </div>
