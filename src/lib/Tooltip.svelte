@@ -9,6 +9,7 @@
     dataPoint = null,
     series = null,
     tooltipClass = "spider-chart-tooltip",
+    max = 100,
   } = $props<{
     visible: boolean;
     x: number;
@@ -16,6 +17,7 @@
     dataPoint: SpiderDataPoint | null;
     series: SpiderChartSeries | null;
     tooltipClass: string;
+    max?: number;
   }>();
 
   // Reference to the chart container
@@ -133,7 +135,13 @@
       {#if dataPoint.description}
         <div class="axis-description">{dataPoint.description}</div>
       {/if}
-      <div class="axis-value">{dataPoint.value}</div>
+      <div class="axis-value">
+        {typeof dataPoint.value === "number"
+          ? `${Number(dataPoint.value).toLocaleString(undefined, {
+              maximumFractionDigits: 1,
+            })} / ${max}`
+          : dataPoint.value}
+      </div>
       {#if dataPoint.rationale}
         <div class="axis-rationale">{dataPoint.rationale}</div>
       {/if}

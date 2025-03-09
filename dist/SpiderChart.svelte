@@ -25,10 +25,10 @@
     width = "100%",
     height = "100%",
     className = "",
-    titleClass = "spider-chart-title",
-    descriptionClass = "spider-chart-description",
-    rationaleClass = "spider-chart-rationale",
-    valueClass = "spider-chart-value",
+    titleClass = "",
+    descriptionClass = "",
+    rationaleClass = "",
+    valueClass = "",
     breadcrumbsClass = "",
     breadcrumbItemClass = "breadcrumb-item",
     tooltipClass = "spider-chart-tooltip",
@@ -962,35 +962,36 @@
     </div>
   {/if}
 
-  {#if description}
+  {#if description || navigationPath[navigationPath.length - 1]?.description}
     <div class={descriptionClass}>
       {#if navigationPath.length > 0}
-        Viewing details for {navigationPath[navigationPath.length - 1]?.axis ||
-          ""}
+        {navigationPath[navigationPath.length - 1]?.description || description}
       {:else}
         {description}
       {/if}
     </div>
   {/if}
 
-  {#if rationale}
-    <div class="rationale-container">
-      {#if value !== undefined}
-        <span class={valueClass}>
-          {#if navigationPath.length > 0 && navigationPath[navigationPath.length - 1]?.value !== undefined}
-            {navigationPath[navigationPath.length - 1]?.value}
-          {:else}
-            {value}
-          {/if}
-        </span>
-      {/if}
-      <div class={rationaleClass}>
-        {#if navigationPath.length > 0}
-          {navigationPath[navigationPath.length - 1]?.rationale || rationale}
-        {:else}
-          {rationale}
+  {#if rationale || navigationPath[navigationPath.length - 1]?.rationale}
+    <div class={rationaleClass}>
+      {#if navigationPath.length > 0}
+        {#if navigationPath[navigationPath.length - 1]?.value !== undefined}
+          <span class={valueClass}>
+            {typeof navigationPath[navigationPath.length - 1]?.value ===
+            "number"
+              ? `${Number(navigationPath[navigationPath.length - 1]?.value).toLocaleString(undefined, { maximumFractionDigits: 1 })} / ${mergedConfig.max || max}`
+              : navigationPath[navigationPath.length - 1]?.value}
+          </span>
         {/if}
-      </div>
+        {navigationPath[navigationPath.length - 1]?.rationale || rationale}
+      {:else}
+        <span class={valueClass}>
+          {typeof value === "number"
+            ? `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })} / ${mergedConfig.max || max}`
+            : value}
+        </span>
+        {rationale}
+      {/if}
     </div>
   {/if}
 
@@ -1003,6 +1004,7 @@
     dataPoint={tooltipDataPoint}
     series={tooltipSeries}
     {tooltipClass}
+    max={mergedConfig.max || max}
   />
 </div>
 
@@ -1015,44 +1017,6 @@
     width: 100%;
     height: 100%;
     min-height: 300px;
-  }
-
-  .spider-chart-title {
-    font-size: 16px;
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 16px;
-  }
-
-  .spider-chart-description {
-    font-size: 14px;
-    color: #666;
-    text-align: center;
-    margin-bottom: 8px;
-    font-style: italic;
-  }
-
-  .rationale-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-  }
-
-  .spider-chart-value {
-    font-size: 18px;
-    font-weight: bold;
-    color: #333;
-    margin-right: 8px;
-  }
-
-  .spider-chart-rationale {
-    font-size: 14px;
-    color: #666;
-    text-align: center;
-    padding: 4px 8px;
-    line-height: 1.4;
   }
 
   /* Default tooltip class that can be overridden by user */

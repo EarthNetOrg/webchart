@@ -6,6 +6,7 @@ type $$ComponentProps = {
     dataPoint: SpiderDataPoint | null;
     series: SpiderChartSeries | null;
     tooltipClass: string;
+    max?: number;
 };
 declare const Tooltip: import("svelte").Component<$$ComponentProps, {}, "">;
 type Tooltip = ReturnType<typeof Tooltip>;
