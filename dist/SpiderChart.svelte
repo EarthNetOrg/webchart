@@ -22,9 +22,10 @@
     description = undefined,
     rationale = undefined,
     value = undefined,
-    width = "100%",
-    height = "100%",
-    className = "",
+    width = "",
+    height = "",
+    containerClass = "",
+    chartClass = "spider-chart",
     titleClass = "",
     descriptionClass = "",
     rationaleClass = "",
@@ -36,21 +37,22 @@
     max = 100,
   } = $props<{
     data: SpiderDataPoint[] | SpiderChartSeries[];
-    config: any;
+    config?: any;
     title?: string;
     description?: string;
     rationale?: string;
     value?: string | number;
-    width: string | number;
-    height: string | number;
-    className: string;
-    titleClass: string;
-    descriptionClass: string;
-    rationaleClass: string;
-    valueClass: string;
-    breadcrumbsClass: string;
-    breadcrumbItemClass: string;
-    tooltipClass: string;
+    width?: string | number;
+    height?: string | number;
+    containerClass?: string;
+    chartClass?: string;
+    titleClass?: string;
+    descriptionClass?: string;
+    rationaleClass?: string;
+    valueClass?: string;
+    breadcrumbsClass?: string;
+    breadcrumbItemClass?: string;
+    tooltipClass?: string;
     min?: number;
     max?: number;
   }>();
@@ -939,7 +941,7 @@
   }
 </script>
 
-<div class="spider-chart-container {className}" style:width style:height>
+<div class="spider-chart-container {containerClass}" style:width style:height>
   <Breadcrumbs
     path={navigationPath}
     onNavigate={handleNavigate}
@@ -994,7 +996,7 @@
     </div>
   {/if}
 
-  <div class="spider-chart" bind:this={chartElement}></div>
+  <div class="spider-chart {chartClass}" bind:this={chartElement}></div>
 
   <Tooltip
     visible={tooltipVisible}
@@ -1013,8 +1015,6 @@
   }
 
   .spider-chart {
-    width: 100%;
-    height: 100%;
     min-height: 300px;
   }
 
