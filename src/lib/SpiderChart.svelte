@@ -224,10 +224,10 @@
       // Force a reflow to ensure the container has the correct dimensions
       chartElement.getBoundingClientRect();
 
-      // Update chart group position
+      // Update chart group position - position at top instead of center
       chartGroup.attr(
         "transform",
-        `translate(${(margin || { left: 50 }).left + dimensions.centerX}, ${(margin || { top: 50 }).top + dimensions.centerY})`
+        `translate(${(margin || { left: 50 }).left + dimensions.centerX}, ${(margin || { top: 50 }).top + dimensions.radius})`
       );
 
       // Get all unique axes from all series
