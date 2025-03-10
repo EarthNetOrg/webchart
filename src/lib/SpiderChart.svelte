@@ -639,6 +639,23 @@
       chartGroup.selectAll(".radar-area").remove();
       chartGroup.selectAll(".radar-stroke").remove();
       chartGroup.selectAll(".radar-point").remove();
+      chartGroup.selectAll(".radar-value-line").remove();
+      chartGroup.selectAll(".center-dot").remove();
+
+      // Add center dot
+      chartGroup
+        .append("circle")
+        .attr("class", "center-dot")
+        .attr("cx", 0)
+        .attr("cy", 0)
+        .attr("r", 4)
+        .attr("fill", "#333")
+        .attr("stroke", "#fff")
+        .attr("stroke-width", 1)
+        .attr("opacity", 0)
+        .transition()
+        .duration(animationDuration || 500)
+        .attr("opacity", 1);
 
       // Generate color scale
       const colorScale = generateColorScale(currentSeries);
@@ -733,6 +750,22 @@
 
             // Store point data for tooltip
             allPoints.push({ x, y, dataPoint: point, seriesIndex });
+
+            // Draw line from center to value point
+            chartGroup
+              .append("line")
+              .attr("class", "radar-value-line")
+              .attr("x1", 0)
+              .attr("y1", 0)
+              .attr("x2", x)
+              .attr("y2", y)
+              .attr("stroke", color)
+              .attr("stroke-width", 1)
+              .attr("stroke-opacity", 0)
+              .attr("stroke-dasharray", "3,3")
+              .transition()
+              .duration(animationDuration || 500)
+              .attr("stroke-opacity", 0.5);
 
             // Draw point
             chartGroup
